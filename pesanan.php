@@ -133,51 +133,7 @@ $role_display = $_SESSION['role'];
     <link
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600;700;900&display=swap"
         rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        .heading-font {
-            font-family: 'Orbitron', sans-serif;
-            letter-spacing: 0.05em;
-        }
-
-        .custom-dark {
-            background-color: #121212;
-        }
-
-        .input-dark {
-            background-color: #2a2a2a;
-            color: white;
-            border: none;
-        }
-
-        .select-status {
-            background-color: #2a2a2a;
-            font-size: 11px;
-            font-weight: 800;
-            padding: 8px 12px;
-            border-radius: 10px;
-            border: none;
-            outline: none;
-            cursor: pointer;
-            appearance: none;
-            text-transform: uppercase;
-            width: 140px;
-        }
-
-        #service-dropdown {
-            transition: all 0.3s ease-in-out;
-            max-height: 0;
-            overflow: hidden;
-        }
-
-        #service-dropdown.show {
-            max-height: 200px;
-            margin-top: 0.5rem;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="bg-black flex h-screen overflow-hidden text-white">
@@ -187,16 +143,20 @@ $role_display = $_SESSION['role'];
     </div>
     <main class="flex-1 custom-dark p-12 overflow-y-auto">
         <header class="flex justify-between items-baseline mb-8 border-b border-gray-800/50 pb-6">
-            <h2 class="heading-font text-4xl italic uppercase">New Order</h2>
-            <p class="text-gray-500 text-sm italic font-light tracking-wide">Design your vision. We craft perfection.
-            </p>
+            <div>
+                <h2 class="heading-font text-4xl italic uppercase">New Order</h2>
+                <p class="text-gray-500 text-xl italic font-light tracking-wide">Design your vision. We craft
+                    perfection.
+                </p>
+            </div>
         </header>
 
         <form id="orderForm" action="pesanan.php" method="POST" enctype="multipart/form-data"
             class="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div class="space-y-8">
                 <div class="space-y-4">
-                    <label class="heading-font text-lg text-orange-500 uppercase tracking-widest">1. Pelanggan</label>
+                    <label class="heading-font text-lg border-gray-800/50 uppercase tracking-widest">1.
+                        Pelanggan</label>
                     <div class="flex gap-4">
                         <div class="w-1/3">
                             <p class="text-gray-500 text-[10px] mb-1 uppercase font-bold">ID :</p>
@@ -216,7 +176,7 @@ $role_display = $_SESSION['role'];
                 </div>
 
                 <div class="space-y-4">
-                    <label class="heading-font text-lg text-orange-500 uppercase tracking-widest">2. Item
+                    <label class="heading-font text-lg border-gray-800/50 uppercase tracking-widest">2. Item
                         Pesanan</label>
                     <div id="items-container" class="space-y-6">
                         <div class="item-row bg-[#1a1a1a]/50 p-6 rounded-[32px] border border-gray-800 space-y-4">
@@ -225,10 +185,10 @@ $role_display = $_SESSION['role'];
                                     class="flex-1 input-dark p-3 rounded-xl text-sm product-select outline-none">
                                     <option value="0" data-price="0" data-stock="0">Pilih Produk</option>
                                     <?php foreach ($daftarBarang as $b): ?>
-                                        <option value="<?= $b['id_barang'] ?>" data-price="<?= $b['harga_barang'] ?>"
-                                            data-stock="<?= $b['stok_tersedia'] ?>">
-                                            <?= htmlspecialchars($b['nama_barang']) ?>
-                                        </option>
+                                    <option value="<?= $b['id_barang'] ?>" data-price="<?= $b['harga_barang'] ?>"
+                                        data-stock="<?= $b['stok_tersedia'] ?>">
+                                        <?= htmlspecialchars($b['nama_barang']) ?>
+                                    </option>
                                     <?php endforeach; ?>
                                 </select>
                                 <input type="hidden" name="harga_satuan_hidden[]" class="price-hidden" value="0">
@@ -244,18 +204,18 @@ $role_display = $_SESSION['role'];
                         </div>
                     </div>
                     <button type="button" onclick="addItem()"
-                        class="text-orange-500 text-[10px] font-bold uppercase tracking-widest"><i
+                        class="border-gray-800/50 text-[10px] font-bold uppercase tracking-widest"><i
                             class="fas fa-plus-circle mr-1"></i> Tambah Item Lain</button>
                 </div>
 
                 <div class="space-y-4">
-                    <label class="heading-font text-lg text-orange-500 uppercase tracking-widest">3. Desain</label>
+                    <label class="heading-font text-lg border-gray-800/50 uppercase tracking-widest">3. Desain</label>
                     <input type="file" name="desain[]" id="fileInput" class="hidden" accept=".jpg,.jpeg,.png,.pdf"
                         multiple>
                     <div onclick="document.getElementById('fileInput').click()"
                         class="border-2 border-dashed border-gray-700 rounded-[32px] p-10 flex flex-col items-center justify-center space-y-3 hover:border-orange-500 transition-all duration-300 cursor-pointer bg-[#1a1a1a]/50 group">
                         <i
-                            class="fas fa-cloud-upload-alt text-4xl text-gray-600 group-hover:text-orange-500 transition-colors"></i>
+                            class="fas fa-cloud-upload-alt text-4xl text-gray-600 group-hover:border-gray-800/50 transition-colors"></i>
                         <div id="fileList" class="text-center">
                             <p class="text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em]">Klik untuk Upload
                                 Banyak Desain</p>
@@ -271,7 +231,7 @@ $role_display = $_SESSION['role'];
                         Ringkasan Pesanan</h3>
                     <div class="max-h-60 overflow-y-auto pr-2">
                         <table class="w-full text-left">
-                            <thead class="text-gray-500 text-[10px] uppercase font-bold border-b border-gray-800/30">
+                            <thead class="text-gray-500 text-[14px] uppercase font-bold border-b border-gray-800/30">
                                 <tr>
                                     <th class="pb-3">Item</th>
                                     <th class="pb-3 text-center">QTY</th>
@@ -309,7 +269,7 @@ $role_display = $_SESSION['role'];
                         </div>
                         <div class="flex justify-between items-center border-t border-gray-800 pt-8">
                             <p class="text-gray-500 text-sm font-bold uppercase tracking-widest">Sisa Tagihan :</p>
-                            <p id="balance-due" class="text-orange-500 text-3xl font-black">Rp 0</p>
+                            <p id="balance-due" class="border-gray-800/50 text-3xl font-black">Rp 0</p>
                         </div>
                     </div>
                 </div>
@@ -330,117 +290,117 @@ $role_display = $_SESSION['role'];
     </main>
 
     <script>
-        function toggleDropdown() {
-            document.getElementById('service-dropdown').classList.toggle('show');
-            document.getElementById('chevron-icon').classList.toggle('rotate-180');
-        }
+    function toggleDropdown() {
+        document.getElementById('service-dropdown').classList.toggle('show');
+        document.getElementById('chevron-icon').classList.toggle('rotate-180');
+    }
 
-        function addItem() {
-            const container = document.getElementById('items-container');
-            const rows = document.querySelectorAll('.item-row');
-            const newRow = rows[0].cloneNode(true);
-            newRow.querySelector('.qty-input').value = "";
-            newRow.querySelector('.product-select').selectedIndex = 0;
-            newRow.querySelector('textarea').value = "";
-            container.appendChild(newRow);
+    function addItem() {
+        const container = document.getElementById('items-container');
+        const rows = document.querySelectorAll('.item-row');
+        const newRow = rows[0].cloneNode(true);
+        newRow.querySelector('.qty-input').value = "";
+        newRow.querySelector('.product-select').selectedIndex = 0;
+        newRow.querySelector('textarea').value = "";
+        container.appendChild(newRow);
+        calculate();
+    }
+
+    function removeItem(btn) {
+        if (document.querySelectorAll('.item-row').length > 1) {
+            btn.closest('.item-row').remove();
             calculate();
         }
+    }
 
-        function removeItem(btn) {
-            if (document.querySelectorAll('.item-row').length > 1) {
-                btn.closest('.item-row').remove();
-                calculate();
-            }
-        }
+    function formatNumber(angka) {
+        return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
 
-        function formatNumber(angka) {
-            return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        }
+    function calculate() {
+        let grandTotal = 0;
+        const summaryBody = document.getElementById('summary-body');
+        summaryBody.innerHTML = "";
 
-        function calculate() {
-            let grandTotal = 0;
-            const summaryBody = document.getElementById('summary-body');
-            summaryBody.innerHTML = "";
+        document.querySelectorAll('.item-row').forEach(row => {
+            const select = row.querySelector('.product-select');
+            const qtyInput = row.querySelector('.qty-input');
+            const selectedOption = select.options[select.selectedIndex];
 
-            document.querySelectorAll('.item-row').forEach(row => {
-                const select = row.querySelector('.product-select');
-                const qtyInput = row.querySelector('.qty-input');
-                const selectedOption = select.options[select.selectedIndex];
+            // --- AMBIL HARGA DARI DATABASE (DATA-PRICE) ---
+            const price = parseFloat(selectedOption.dataset.price) || 0;
 
-                // --- AMBIL HARGA DARI DATABASE (DATA-PRICE) ---
-                const price = parseFloat(selectedOption.dataset.price) || 0;
+            // Simpan harga ke hidden input agar benar saat masuk database
+            row.querySelector('.price-hidden').value = price;
 
-                // Simpan harga ke hidden input agar benar saat masuk database
-                row.querySelector('.price-hidden').value = price;
+            const stock = parseInt(selectedOption.dataset.stock) || 0;
+            let qty = parseInt(qtyInput.value) || 0;
 
-                const stock = parseInt(selectedOption.dataset.stock) || 0;
-                let qty = parseInt(qtyInput.value) || 0;
-
-                if (select.value !== "0" && qty > 0) {
-                    if (qty > stock) {
-                        alert(`Stok ${selectedOption.text} cuma ada ${stock}!`);
-                        qty = stock;
-                        qtyInput.value = stock;
-                    }
-                    const subtotal = qty * price;
-                    grandTotal += subtotal;
-                    summaryBody.innerHTML += `
-            <tr class="border-b border-gray-800/20">
-                <td class="py-3 uppercase font-bold text-[10px] leading-tight">${selectedOption.text}</td>
-                <td class="py-3 text-center text-[10px]">${qty}x</td>
-                <td class="py-3 text-right text-gray-200 font-mono text-[10px]">Rp ${formatNumber(subtotal)}</td>
-            </tr>`;
+            if (select.value !== "0" && qty > 0) {
+                if (qty > stock) {
+                    alert(`Stok ${selectedOption.text} cuma ada ${stock}!`);
+                    qty = stock;
+                    qtyInput.value = stock;
                 }
-            });
-
-            // Sisa logika DP dan Total tetap sama...
-            const dpDisplay = document.getElementById('dp-display');
-            const dpHidden = document.getElementById('dp-input');
-            const autoDP = Math.ceil(grandTotal * 0.50);
-
-            dpHidden.value = autoDP;
-            dpDisplay.value = formatNumber(autoDP);
-            document.getElementById('total-price').innerText = `Rp ${formatNumber(grandTotal)}`;
-            document.getElementById('total-hidden').value = grandTotal;
-
-            const sisa = grandTotal - (parseInt(dpHidden.value) || 0);
-            document.getElementById('balance-due').innerText = `Rp ${formatNumber(sisa)}`;
-        }
-
-        function manualDP() {
-            const dpDisplay = document.getElementById('dp-display');
-            const dpHidden = document.getElementById('dp-input');
-            let value = dpDisplay.value.replace(/\D/g, "");
-            if (value !== "") {
-                dpHidden.value = value;
-                dpDisplay.value = formatNumber(value);
-            } else {
-                dpHidden.value = 0;
-                dpDisplay.value = "";
-            }
-            const total = parseInt(document.getElementById('total-hidden').value) || 0;
-            const sisa = total - (parseInt(dpHidden.value) || 0);
-            document.getElementById('balance-due').innerText = `Rp ${formatNumber(sisa)}`;
-        }
-
-        document.getElementById('orderForm').addEventListener('submit', function (e) {
-            const dp = document.getElementById('dp-input').value;
-            if (dp === "" || dp === "0") {
-                e.preventDefault();
-                alert("Nominal DP tidak boleh kosong!");
+                const subtotal = qty * price;
+                grandTotal += subtotal;
+                summaryBody.innerHTML += `
+            <tr class="border-b border-gray-800/20">
+                <td class="py-3 uppercase font-bold text-[12px] leading-tight">${selectedOption.text}</td>
+                <td class="py-3 text-center text-[12px]">${qty}x</td>
+                <td class="py-3 text-right text-gray-200 font-mono text-[12px]">Rp ${formatNumber(subtotal)}</td>
+            </tr>`;
             }
         });
 
-        document.getElementById('fileInput').addEventListener('change', function () {
-            const list = document.getElementById('fileList');
-            list.innerHTML = "";
-            for (let i = 0; i < this.files.length; i++) {
-                const p = document.createElement('p');
-                p.className = "text-orange-500 text-[10px] font-bold uppercase mt-1 animate-pulse";
-                p.innerHTML = `<i class="fas fa-check-circle mr-1"></i> ${this.files[i].name}`;
-                list.appendChild(p);
-            }
-        });
+        // Sisa logika DP dan Total tetap sama...
+        const dpDisplay = document.getElementById('dp-display');
+        const dpHidden = document.getElementById('dp-input');
+        const autoDP = Math.ceil(grandTotal * 0.50);
+
+        dpHidden.value = autoDP;
+        dpDisplay.value = formatNumber(autoDP);
+        document.getElementById('total-price').innerText = `Rp ${formatNumber(grandTotal)}`;
+        document.getElementById('total-hidden').value = grandTotal;
+
+        const sisa = grandTotal - (parseInt(dpHidden.value) || 0);
+        document.getElementById('balance-due').innerText = `Rp ${formatNumber(sisa)}`;
+    }
+
+    function manualDP() {
+        const dpDisplay = document.getElementById('dp-display');
+        const dpHidden = document.getElementById('dp-input');
+        let value = dpDisplay.value.replace(/\D/g, "");
+        if (value !== "") {
+            dpHidden.value = value;
+            dpDisplay.value = formatNumber(value);
+        } else {
+            dpHidden.value = 0;
+            dpDisplay.value = "";
+        }
+        const total = parseInt(document.getElementById('total-hidden').value) || 0;
+        const sisa = total - (parseInt(dpHidden.value) || 0);
+        document.getElementById('balance-due').innerText = `Rp ${formatNumber(sisa)}`;
+    }
+
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+        const dp = document.getElementById('dp-input').value;
+        if (dp === "" || dp === "0") {
+            e.preventDefault();
+            alert("Nominal DP tidak boleh kosong!");
+        }
+    });
+
+    document.getElementById('fileInput').addEventListener('change', function() {
+        const list = document.getElementById('fileList');
+        list.innerHTML = "";
+        for (let i = 0; i < this.files.length; i++) {
+            const p = document.createElement('p');
+            p.className = "border-gray-800/50 text-[10px] font-bold uppercase mt-1 animate-pulse";
+            p.innerHTML = `<i class="fas fa-check-circle mr-1"></i> ${this.files[i].name}`;
+            list.appendChild(p);
+        }
+    });
     </script>
 </body>
 

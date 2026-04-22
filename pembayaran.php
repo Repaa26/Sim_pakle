@@ -101,50 +101,7 @@ $role_display = $_SESSION['role'];
     <link
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600;700;900&display=swap"
         rel="stylesheet">
-    <style>
-    body {
-        font-family: 'Inter', sans-serif;
-    }
-
-    .heading-font {
-        font-family: 'Orbitron', sans-serif;
-        letter-spacing: 0.05em;
-    }
-
-    .custom-dark {
-        background-color: #121212;
-    }
-
-    .card-table {
-        background-color: #1a1a1a;
-        border-radius: 30px;
-    }
-
-    .select-status {
-        background-color: #2a2a2a;
-        font-size: 11px;
-        font-weight: 800;
-        padding: 8px 12px;
-        border-radius: 10px;
-        border: none;
-        outline: none;
-        cursor: pointer;
-        appearance: none;
-        text-transform: uppercase;
-        width: 140px;
-    }
-
-    #service-dropdown {
-        transition: all 0.3s ease-in-out;
-        max-height: 0;
-        overflow: hidden;
-    }
-
-    #service-dropdown.show {
-        max-height: 200px;
-        margin-top: 0.5rem;
-    }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="bg-black flex h-screen overflow-hidden text-white">
@@ -155,7 +112,11 @@ $role_display = $_SESSION['role'];
 
     <main class="flex-1 custom-dark p-12 overflow-y-auto">
         <header class="flex justify-between items-baseline mb-10 border-b border-gray-800/50 pb-8">
-            <h2 class="heading-font text-4xl italic uppercase tracking-tighter text-orange-500">Finance</h2>
+            <div>
+                <h2 class="heading-font text-4xl italic uppercase tracking-tighter border-gray-800/50">Finance</h2>
+                <p class="text-gray-500 text-xl italic font-light tracking-wide">Design your vision. We craft
+                    perfection.
+            </div>
             <form action="" method="GET" class="relative w-80">
                 <input type="text" name="q" placeholder="Cari Pelanggan..." value="<?= htmlspecialchars($search) ?>"
                     class="w-full bg-white rounded-full py-2.5 px-6 text-sm text-black outline-none focus:ring-2 focus:ring-orange-500">

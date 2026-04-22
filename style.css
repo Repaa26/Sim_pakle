@@ -1,0 +1,226 @@
+/* =========================================
+   MASTER GLOBAL STYLES (SIM PAKLE)
+   ========================================= */
+
+:root {
+    --primary-orange: #ff4d00;
+    --hover-orange: #e64500;
+    --bg-deep: #121212;
+    --bg-card: #1a1a1a;
+    --bg-input: #2a2a2a;
+    --text-muted: #666666;
+    --border-dark: #333333;
+}
+
+/* Base Reset */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: black;
+    color: white;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Typography */
+.heading-font {
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.05em;
+    font-style: italic;
+}
+
+/* Layout Utilities */
+.custom-dark {
+    background-color: var(--bg-deep);
+}
+
+.card-table {
+    background-color: var(--bg-card);
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Form Elements */
+.input-dark {
+    background-color: var(--bg-input);
+    color: white;
+    border: 1px solid var(--border-dark);
+    transition: all 0.2s ease;
+}
+
+.input-dark:focus {
+    border-color: var(--primary-orange);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 77, 0, 0.2);
+}
+
+.input-dark::placeholder {
+    color: var(--text-muted);
+}
+
+/* Status Select Tool (Pembayaran & Desain) */
+.select-status {
+    background-color: var(--bg-input);
+    color: #9ca3af;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    text-transform: uppercase;
+    transition: background-color 0.2s;
+}
+
+.select-status:hover {
+    background-color: #353535;
+    color: white;
+}
+
+/* Sidebar Navigation Logic */
+#service-dropdown {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+}
+
+#service-dropdown.show {
+    max-height: 500px; /* Nilai aman untuk semua sub-menu */
+    margin-top: 0.5rem;
+    opacity: 1;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--border-dark);
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* Animation */
+.chart-bar {
+    transition: height 1s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s;
+}
+
+/* =========================================
+   PRINT ENGINE (Halaman Laporan/Kuitansi)
+   ========================================= */
+@media print {
+    body {
+        background: white !important;
+        color: black !important;
+    }
+
+    /* Sembunyikan elemen dashboard saat cetak */
+    aside, 
+    nav, 
+    header button, 
+    .no-print, 
+    .flex-none {
+        display: none !important;
+    }
+
+    #area-cetak, 
+    #area-cetak * {
+        visibility: visible;
+        color: black !important;
+    }
+
+    #area-cetak {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white !important;
+        padding: 20px !important;
+    }
+
+    .card-table {
+        background: white !important;
+        border: 1px solid #000 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+
+    th, td {
+        border: 1px solid #333 !important;
+        padding: 10px !important;
+        color: black !important;
+    }
+
+    th {
+        background-color: #f2f2f2 !important;
+    }
+}
+/* STYLE KHUSUS CETAK */
+    @media print {
+
+        /* Sembunyikan semua elemen kecuali area tabel */
+        body * {
+            visibility: hidden;
+        }
+
+        /* Tampilkan area tabel dan isinya */
+        #area-cetak,
+        #area-cetak * {
+            visibility: visible;
+        }
+
+        /* Posisikan tabel di paling atas kertas */
+        #area-cetak {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            background: white !important;
+            color: black !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+        }
+
+        /* Rapikan tampilan tabel untuk kertas */
+        table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd !important;
+            color: black !important;
+            padding: 12px !important;
+            text-transform: uppercase !important;
+        }
+
+        th {
+            background-color: #f2f2f2 !important;
+        }
+
+        .no-print {
+            display: none !important;
+        }
+    }

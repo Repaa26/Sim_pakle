@@ -64,31 +64,7 @@ $totalHalaman = ceil($pdo->query("SELECT COUNT(*) FROM pesanan")->fetchColumn() 
     <link
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600;700;900&display=swap"
         rel="stylesheet">
-    <style>
-    body {
-        font-family: 'Inter', sans-serif;
-        background-color: black;
-        color: white;
-    }
-
-    .heading-font {
-        font-family: 'Orbitron', sans-serif;
-        letter-spacing: 0.05em;
-    }
-
-    .custom-dark {
-        background-color: #121212;
-    }
-
-    .card-table {
-        background-color: #1a1a1a;
-        border-radius: 30px;
-    }
-
-    .chart-bar {
-        transition: height 1s ease-in-out, background-color 0.3s;
-    }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="flex h-screen overflow-hidden">
@@ -98,13 +74,13 @@ $totalHalaman = ceil($pdo->query("SELECT COUNT(*) FROM pesanan")->fetchColumn() 
     <main class="flex-1 custom-dark p-12 overflow-y-auto">
         <header class="flex justify-between items-baseline mb-12 border-b border-gray-800/50 pb-8">
             <div>
-                <h2 class="heading-font text-white text-4xl uppercase text-orange-500">Dashboard</h2>
-                <p class="text-gray-500 text-[10px] font-black tracking-[0.4em] mt-2 uppercase">Packle Sport Management
-                    System</p>
+                <h2 class="heading-font text-white text-4xl uppercase border-gray-800/50">Dashboard</h2>
+                <p class="text-gray-500 text-xl italic font-light tracking-wide">Design your vision. We
+                    craft perfection. Leave it to Pakle Production.</p>
             </div>
             <div class="text-right">
                 <p class="text-white font-bold text-sm uppercase"><?= date('l, d F Y') ?></p>
-                <p class="text-gray-600 text-[9px] font-black uppercase tracking-widest"><?= $role_display ?> Session
+                <p class="text-gray-600 text-[10px] font-black uppercase tracking-widest"><?= $role_display ?> Session
                     Active</p>
             </div>
         </header>
@@ -145,9 +121,9 @@ $totalHalaman = ceil($pdo->query("SELECT COUNT(*) FROM pesanan")->fetchColumn() 
         <div class="grid grid-cols-3 gap-8">
             <div class="col-span-2 card-table p-10 border border-gray-800/50 shadow-2xl">
                 <div class="flex justify-between items-center mb-10">
-                    <h3 class="heading-font text-white text-xl uppercase tracking-widest">7 Days Performance</h3>
+                    <h3 class="heading-font text-white text-2xl uppercase tracking-widest">7 Days Performance</h3>
                     <span
-                        class="text-[9px] text-gray-500 font-bold uppercase tracking-widest border border-gray-800 px-3 py-1 rounded-full">Order
+                        class="text-[11px] text-gray-500 font-bold uppercase tracking-widest border border-gray-800 px-3 py-1 rounded-full">Order
                         Frequency</span>
                 </div>
                 <div class="flex items-end justify-between h-64 px-4">
@@ -171,7 +147,8 @@ $totalHalaman = ceil($pdo->query("SELECT COUNT(*) FROM pesanan")->fetchColumn() 
 
             <div class="space-y-6">
                 <div class="card-table p-8 border border-gray-800/50 shadow-2xl">
-                    <h3 class="heading-font text-white text-sm uppercase mb-6 tracking-widest">Best Selling</h3>
+                    <h3 class="heading-font text-xl text-white text-sm uppercase mb-6 tracking-widest">Best Selling
+                    </h3>
                     <div class="space-y-4">
                         <?php foreach ($topProducts as $top): ?>
                         <div
@@ -188,20 +165,20 @@ $totalHalaman = ceil($pdo->query("SELECT COUNT(*) FROM pesanan")->fetchColumn() 
                     <i
                         class="fas fa-bolt absolute -right-4 -bottom-4 text-7xl text-white/10 group-hover:scale-110 transition-transform"></i>
                     <h4 class="font-black uppercase text-white text-lg leading-tight mb-2">Ready to work?</h4>
-                    <p class="text-white/70 text-[10px] uppercase font-bold tracking-widest">Check the production line
+                    <p class="text-white/70 text-[12px] uppercase font-bold tracking-widest">Check the production line
                         now.</p>
                     <a href="produksi.php"
-                        class="mt-6 inline-block bg-white text-black text-[10px] font-black px-6 py-3 rounded-full uppercase tracking-tighter hover:bg-black hover:text-white transition-all">Go
+                        class="mt-6 inline-block bg-white text-black text-[12px] font-black px-6 py-3 rounded-full uppercase tracking-tighter hover:bg-black hover:text-white transition-all">Go
                         to Production</a>
                 </div>
             </div>
         </div>
 
         <div class="card-table p-10 border border-gray-800/50 shadow-2xl mt-12">
-            <h3 class="heading-font text-white text-xl uppercase mb-8 tracking-widest">Recent Activity</h3>
+            <h3 class="heading-font text-white text-2xl uppercase mb-8 tracking-widest">Recent Activity</h3>
             <table class="w-full text-left">
                 <thead>
-                    <tr class="text-gray-500 text-[10px] font-black uppercase tracking-widest border-b border-gray-800">
+                    <tr class="text-gray-500 text-[13px] font-black uppercase tracking-widest border-b border-gray-800">
                         <th class="pb-5 px-4">Order ID</th>
                         <th class="pb-5">Customer</th>
                         <th class="pb-5">Total</th>
@@ -209,7 +186,7 @@ $totalHalaman = ceil($pdo->query("SELECT COUNT(*) FROM pesanan")->fetchColumn() 
                         <th class="pb-5 text-center">Date</th>
                     </tr>
                 </thead>
-                <tbody class="text-gray-300 text-[11px] font-bold tracking-wide uppercase">
+                <tbody class="text-gray-300 text-[13px] font-bold tracking-wide uppercase">
                     <?php foreach ($recentOrders as $order): ?>
                     <tr class="border-b border-gray-800/40 hover:bg-white/5 transition-all">
                         <td class="py-5 px-4 text-orange-500 font-mono font-black">#<?= $order['id_pesanan'] ?></td>
@@ -217,11 +194,11 @@ $totalHalaman = ceil($pdo->query("SELECT COUNT(*) FROM pesanan")->fetchColumn() 
                         <td class="py-5 font-mono"><?= formatRupiah($order['total_harga']) ?></td>
                         <td class="py-5">
                             <span
-                                class="px-3 py-1 rounded-full text-[9px] font-black <?= $order['status_bayar'] == 'lunas' ? 'text-green-500' : 'text-red-500' ?>">
+                                class="px-3 py-1 rounded-full text-[11px] font-black <?= $order['status_bayar'] == 'lunas' ? 'text-green-500' : 'text-red-500' ?>">
                                 <?= $order['status_bayar'] ?>
                             </span>
                         </td>
-                        <td class="py-5 text-center text-gray-600 font-mono text-[10px]">
+                        <td class="py-5 text-center text-gray-600 font-mono text-[12px]">
                             <?= date('d/m/y H:i', strtotime($order['tgl_pesanan'])) ?>
                         </td>
                     </tr>

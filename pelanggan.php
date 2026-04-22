@@ -52,33 +52,7 @@ $role_display = $_SESSION['role'];
     <link
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600;700;900&display=swap"
         rel="stylesheet">
-    <style>
-    body {
-        font-family: 'Inter', sans-serif;
-        background: black;
-        color: white;
-    }
-
-    .heading-font {
-        font-family: 'Orbitron', sans-serif;
-        letter-spacing: 0.05em;
-    }
-
-    .custom-dark {
-        background-color: #121212;
-    }
-
-    .card-table {
-        background-color: #1a1a1a;
-        border-radius: 30px;
-    }
-
-    .input-dark {
-        background-color: #2a2a2a;
-        border: 1px solid #333;
-        color: white;
-    }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="flex h-screen overflow-hidden">
@@ -88,9 +62,9 @@ $role_display = $_SESSION['role'];
     <main class="flex-1 custom-dark p-12 overflow-y-auto">
         <header class="flex justify-between items-baseline mb-12 border-b border-gray-800/50 pb-8">
             <div>
-                <h2 class="heading-font text-white text-4xl uppercase text-orange-500">Pelanggan</h2>
-                <p class="text-gray-500 text-[10px] font-black tracking-[0.4em] mt-2 uppercase">Customer Identity &
-                    Order History</p>
+                <h2 class="heading-font text-white text-4xl uppercase border-gray-800/50">Pelanggan</h2>
+                <p class="text-gray-500 text-xl italic font-light tracking-wide">Design your vision. We craft
+                    perfection.
             </div>
 
             <form action="" method="GET" class="relative w-80">
@@ -104,37 +78,37 @@ $role_display = $_SESSION['role'];
         <div class="card-table p-10 border border-gray-800/50 shadow-2xl">
             <table class="w-full text-left">
                 <thead>
-                    <tr class="text-gray-500 text-[10px] font-black uppercase tracking-widest border-b border-gray-800">
+                    <tr class="text-gray-500 text-[13px] font-black uppercase tracking-widest border-b border-gray-800">
                         <th class="pb-5 px-4">Identitas</th>
                         <th class="pb-5">Kontak & Alamat</th>
                         <th class="pb-5 text-center">Total Order</th>
                         <th class="pb-5 text-center">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="text-gray-300 text-[11px] font-bold tracking-wide uppercase">
+                <tbody class="text-gray-300 text-[13px] font-bold tracking-wide uppercase">
                     <?php foreach($pelanggan as $row): ?>
                     <tr class="border-b border-gray-800/40 hover:bg-white/5 transition-all group">
                         <td class="py-6 px-4">
-                            <p class="text-white font-black text-sm tracking-tighter">
+                            <p class="text-white text-[17px] tracking-tighter">
                                 <?= htmlspecialchars($row['nama_pelanggan']) ?></p>
-                            <p class="text-orange-500 text-[9px] font-mono">ID:
+                            <p class="text-orange-500 text-[12px] ">ID:
                                 PL-<?= str_pad($row['id_pelanggan'], 4, '0', STR_PAD_LEFT) ?></p>
                         </td>
                         <td class="py-6">
-                            <p class="text-gray-100 italic mb-1"><i
+                            <p class="text-gray-100 mb-1"><i
                                     class="fas fa-phone text-[9px] mr-2 text-gray-600"></i><?= $row['no_telp'] ?></p>
                             <p class="text-gray-500 text-[10px] lowercase leading-relaxed"><i
                                     class="fas fa-map-marker-alt text-[9px] mr-2"></i><?= $row['alamat'] ?></p>
                         </td>
                         <td class="py-6 text-center">
-                            <span class="bg-white/5 border border-gray-800 px-4 py-1.5 rounded-full text-white">
+                            <span class="bg-white/5 border border-gray-800 px-4 py-1 rounded-full text-white">
                                 <?= $row['total_order'] ?> PESANAN
                             </span>
                         </td>
                         <td class="py-6 text-center">
                             <button
                                 onclick="showHistory(<?= $row['id_pelanggan'] ?>, '<?= addslashes($row['nama_pelanggan']) ?>')"
-                                class="bg-orange-500 hover:bg-white text-black px-6 py-2.5 rounded-xl font-black text-[9px] uppercase transition-all">
+                                class="bg-orange-500 hover:bg-white text-black px-6 py-2.5 rounded-xl font-black text-[11px] uppercase transition-all">
                                 RIWAYAT ORDER
                             </button>
                         </td>

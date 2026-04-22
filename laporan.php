@@ -67,84 +67,7 @@ $laporanData = $stmtDetail->fetchAll();
     <link
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600;700;900&display=swap"
         rel="stylesheet">
-    <style>
-    body {
-        font-family: 'Inter', sans-serif;
-    }
-
-    .heading-font {
-        font-family: 'Orbitron', sans-serif;
-        letter-spacing: 0.05em;
-    }
-
-    .custom-dark {
-        background-color: #121212;
-    }
-
-    .card-table {
-        background-color: #1a1a1a;
-        border-radius: 30px;
-    }
-
-    #service-dropdown {
-        transition: all 0.3s ease-in-out;
-        max-height: 0;
-        overflow: hidden;
-    }
-
-    #service-dropdown.show {
-        max-height: 300px;
-        margin-top: 0.5rem;
-    }
-
-    @media print {
-        body * {
-            visibility: hidden;
-        }
-
-        #area-cetak,
-        #area-cetak * {
-            visibility: visible;
-        }
-
-        #area-cetak {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            background: white !important;
-            color: black !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            border: none !important;
-        }
-
-        .no-print {
-            display: none !important;
-        }
-
-        table {
-            width: 100% !important;
-            border-collapse: collapse !important;
-        }
-
-        th,
-        td {
-            border: 1px solid #ddd !important;
-            color: black !important;
-            padding: 12px !important;
-        }
-
-        th {
-            background-color: #f2f2f2 !important;
-        }
-
-        .card-table {
-            border: none !important;
-            box-shadow: none !important;
-        }
-    }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="bg-black flex h-screen overflow-hidden text-white">
@@ -155,9 +78,9 @@ $laporanData = $stmtDetail->fetchAll();
     <main class="flex-1 custom-dark p-12 overflow-y-auto">
         <header class="flex justify-between items-end mb-12 border-b border-gray-800/50 pb-8 no-print">
             <div>
-                <h2 class="heading-font text-white text-4xl uppercase text-orange-500">Laporan Pemilik</h2>
-                <p class="text-gray-500 text-[10px] font-black tracking-[0.4em] mt-2 uppercase">Ringkasan Strategis
-                    Bisnis</p>
+                <h2 class="heading-font text-white text-4xl uppercase border-gray-800/50">Laporan Pemilik</h2>
+                <p class="text-gray-500 text-xl italic font-light tracking-wide">Design your vision. We craft
+                    perfection.
             </div>
 
             <form action="" method="GET"
@@ -181,7 +104,7 @@ $laporanData = $stmtDetail->fetchAll();
             <div class="card-table p-8 border border-gray-800 relative overflow-hidden group">
                 <p class="text-orange-500 font-black text-[10px] mb-4 uppercase tracking-[0.3em] heading-font">Total
                     Omset Kotor</p>
-                <p class="text-white text-3xl font-black"><?= formatRupiah($summary['total_omset'] ?? 0) ?></p>
+                <p class="text-white text-xl font-black"><?= formatRupiah($summary['total_omset'] ?? 0) ?></p>
                 <div class="absolute -right-4 -top-4 w-20 h-20 bg-orange-500/10 rounded-full blur-2xl"></div>
             </div>
             <div class="card-table p-8 border border-gray-800 shadow-2xl">
@@ -209,9 +132,9 @@ $laporanData = $stmtDetail->fetchAll();
 
         <div id="area-cetak" class="card-table p-10 border border-gray-800/50 shadow-2xl mb-12">
             <div class="flex justify-between items-center mb-10 no-print">
-                <h3 class="heading-font text-white text-xl uppercase tracking-widest">Catatan Transaksi</h3>
+                <h3 class="heading-font text-white text-3xl uppercase tracking-widest">Catatan Transaksi</h3>
                 <button onclick="window.print()"
-                    class="text-[9px] font-black uppercase tracking-widest bg-white text-black px-6 py-2.5 rounded-full hover:bg-orange-500 hover:text-white transition-all">
+                    class="text-[12px] font-black uppercase tracking-widest bg-white text-black px-6 py-2.5 rounded-full hover:bg-orange-500 hover:text-white transition-all">
                     <i class="fas fa-print mr-2"></i> Cetak Laporan
                 </button>
             </div>
@@ -227,7 +150,7 @@ $laporanData = $stmtDetail->fetchAll();
             <table class="w-full text-left">
                 <thead>
                     <tr
-                        class="text-gray-500 print:text-black text-[10px] font-black uppercase tracking-widest border-b border-gray-800 print:border-black">
+                        class="text-gray-500 print:text-black text-[13px] font-black uppercase tracking-widest border-b border-gray-800 print:border-black">
                         <th class="pb-5 px-4">Tanggal</th>
                         <th class="pb-5">ID Pesanan</th>
                         <th class="pb-5">Nama Pelanggan</th>
@@ -235,10 +158,10 @@ $laporanData = $stmtDetail->fetchAll();
                         <th class="pb-5 text-center">Status</th>
                     </tr>
                 </thead>
-                <tbody class="text-gray-300 print:text-black text-[11px] font-bold tracking-wide uppercase">
+                <tbody class="text-gray-300 print:text-black text-[14px] font-bold tracking-wide uppercase">
                     <?php foreach ($laporanData as $row): ?>
                     <tr class="border-b border-gray-800/40 print:border-black/20">
-                        <td class="py-5 px-4 font-mono text-[10px]"><?= date('d/m/Y', strtotime($row['tgl_pesanan'])) ?>
+                        <td class="py-5 px-4 font-mono text-[12px]"><?= date('d/m/Y', strtotime($row['tgl_pesanan'])) ?>
                         </td>
                         <td class="py-5 font-black tracking-widest">#<?= $row['id_pesanan'] ?></td>
                         <td class="py-5"><?= htmlspecialchars($row['nama_pelanggan']) ?></td>
