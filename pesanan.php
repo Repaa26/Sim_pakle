@@ -14,7 +14,12 @@ $queryNextID = $pdo->query("SELECT MAX(id_pelanggan) as last_id FROM pelanggan")
 $nextIDValue = ($queryNextID['last_id'] ?? 0) + 1;
 $autoID = "PL" . sprintf('%04d', $nextIDValue);
 
-$queryBarang = $pdo->query("SELECT * FROM barang ORDER BY nama_barang ASC");
+// --- AMBIL DATA VARIAN BARANG (JOIN 3 TABEL) ---
+$queryBarang = $pdo->query("SELECT v.id_varian, v.id_barang, v.ukuran, v.warna, v.harga, v.stok_tersedia, b.nama_barang, k.nama_kategori 
+                            FROM varian_barang v 
+                            JOIN barang b ON v.id_barang = b.id_barang 
+                            JOIN kategori k ON b.id_kategori = k.id_kategori 
+                            ORDER BY k.nama_kategori ASC, b.nama_barang ASC, v.ukuran ASC");
 $daftarBarang = $queryBarang->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -59,42 +64,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmtPay->execute([$status_bayar, $jumlah_bayar, $tgl_dp, $tgl_lunas, $admin_dp, $admin_lunas, $m_dp, $m_lunas]);
         $id_pembayaran = $pdo->lastInsertId();
 
-        // 3. SIMPAN PESANAN UTAMA (INI YANG WAJIB ADA)
+        // 3. SIMPAN PESANAN UTAMA
         $stmtOrder = $pdo->prepare("INSERT INTO pesanan (id_pelanggan, id_pembayaran, total_harga, tgl_pesanan, status_acc) VALUES (?, ?, ?, NOW(), 'pending')");
         $stmtOrder->execute([$id_pelanggan, $id_pembayaran, $total_harga]);
         $id_pesanan = $pdo->lastInsertId();
 
-        // 4. Detail Barang & Update Stok
-        $stmtDetail = $pdo->prepare("INSERT INTO detail_pesanan (id_pesanan, id_barang, jumlah, harga_satuan, subtotal, keterangan) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmtUpdateStok = $pdo->prepare("UPDATE barang SET stok_tersedia = stok_tersedia - ? WHERE id_barang = ?");
-        $stmtCekStok = $pdo->prepare("SELECT nama_barang, stok_tersedia FROM barang WHERE id_barang = ?");
+        // 4. Detail Barang & Update Stok Varian
+        // Memasukkan id_barang dan id_varian agar relasi tetap aman
+        $stmtDetail = $pdo->prepare("INSERT INTO detail_pesanan (id_pesanan, id_barang, id_varian, jumlah, harga_satuan, subtotal, keterangan) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmtUpdateStok = $pdo->prepare("UPDATE varian_barang SET stok_tersedia = stok_tersedia - ? WHERE id_varian = ?");
+        $stmtCekStok = $pdo->prepare("SELECT b.id_barang, b.nama_barang, v.ukuran, v.warna, v.stok_tersedia FROM varian_barang v JOIN barang b ON v.id_barang = b.id_barang WHERE v.id_varian = ?");
 
-        foreach ($_POST['id_barang'] as $key => $id_barang) {
-            if ($id_barang == "0")
-                continue;
+        // Perhatikan loop ini sekarang menggunakan id_varian[]
+        foreach ($_POST['id_varian'] as $key => $id_varian) {
+            if ($id_varian == "0") continue;
 
             $qty_input = (int) $_POST['qty'][$key];
             $harga_satuan = (float) $_POST['harga_satuan_hidden'][$key];
             $subtotal_item = $qty_input * $harga_satuan;
             $ket_item = $_POST['keterangan_item'][$key];
 
-            $stmtCekStok->execute([$id_barang]);
-            $dataBarang = $stmtCekStok->fetch();
+            $stmtCekStok->execute([$id_varian]);
+            $dataVarian = $stmtCekStok->fetch();
 
-            if ($qty_input > $dataBarang['stok_tersedia']) {
-                throw new Exception("Stok " . $dataBarang['nama_barang'] . " tidak mencukupi!");
+            if ($qty_input > $dataVarian['stok_tersedia']) {
+                $nama_lengkap = $dataVarian['nama_barang'] . " [" . $dataVarian['ukuran'] . "/" . $dataVarian['warna'] . "]";
+                throw new Exception("Stok " . $nama_lengkap . " tidak mencukupi!");
             }
 
-            $stmtDetail->execute([$id_pesanan, $id_barang, $qty_input, $harga_satuan, $subtotal_item, $ket_item]);
-            $stmtUpdateStok->execute([$qty_input, $id_barang]);
+            // Execute insert detail & potong stok
+            $stmtDetail->execute([$id_pesanan, $dataVarian['id_barang'], $id_varian, $qty_input, $harga_satuan, $subtotal_item, $ket_item]);
+            $stmtUpdateStok->execute([$qty_input, $id_varian]);
         }
 
         // 5. Inisialisasi Produksi & Upload File
         $newFile = null;
         if (isset($_FILES['desain']) && !empty($_FILES['desain']['name'][0])) {
             $folder = "uploads/";
-            if (!is_dir($folder))
-                mkdir($folder, 0777, true);
+            if (!is_dir($folder)) mkdir($folder, 0777, true);
             if ($_FILES['desain']['error'][0] === 0) {
                 $ext = pathinfo($_FILES['desain']['name'][0], PATHINFO_EXTENSION);
                 $newFile = "desain_" . time() . "_" . uniqid() . "." . $ext;
@@ -106,13 +113,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmtProd->execute([$newFile, $id_admin_sekarang, $id_pesanan]);
 
         $pdo->commit();
-        // NOTIF BERHASIL
         echo "<script>alert('SUKSES! Pesanan Baru Berhasil Disimpan.'); window.location='index.php';</script>";
         exit;
 
     } catch (Exception $e) {
         $pdo->rollBack();
-        // NOTIF GAGAL
         echo "<script>alert('GAGAL! Terjadi kesalahan: " . addslashes($e->getMessage()) . "');</script>";
     }
 }
@@ -146,8 +151,7 @@ $role_display = $_SESSION['role'];
             <div>
                 <h2 class="heading-font text-4xl italic uppercase">New Order</h2>
                 <p class="text-gray-500 text-xl italic font-light tracking-wide">Design your vision. We craft
-                    perfection.
-                </p>
+                    perfection.</p>
             </div>
         </header>
 
@@ -181,13 +185,13 @@ $role_display = $_SESSION['role'];
                     <div id="items-container" class="space-y-6">
                         <div class="item-row bg-[#1a1a1a]/50 p-6 rounded-[32px] border border-gray-800 space-y-4">
                             <div class="flex gap-3 items-center">
-                                <select name="id_barang[]" onchange="calculate()" required
+                                <select name="id_varian[]" onchange="calculate()" required
                                     class="flex-1 input-dark p-3 rounded-xl text-sm product-select outline-none">
-                                    <option value="0" data-price="0" data-stock="0">Pilih Produk</option>
+                                    <option value="0" data-price="0" data-stock="0">Pilih Produk & Varian</option>
                                     <?php foreach ($daftarBarang as $b): ?>
-                                    <option value="<?= $b['id_barang'] ?>" data-price="<?= $b['harga_barang'] ?>"
+                                    <option value="<?= $b['id_varian'] ?>" data-price="<?= $b['harga'] ?>"
                                         data-stock="<?= $b['stok_tersedia'] ?>">
-                                        <?= htmlspecialchars($b['nama_barang']) ?>
+                                        <?= htmlspecialchars($b['nama_kategori'] . ' - ' . $b['nama_barang'] . ' [' . $b['ukuran'] . ' / ' . $b['warna'] . ']') ?>
                                     </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -327,10 +331,7 @@ $role_display = $_SESSION['role'];
             const qtyInput = row.querySelector('.qty-input');
             const selectedOption = select.options[select.selectedIndex];
 
-            // --- AMBIL HARGA DARI DATABASE (DATA-PRICE) ---
             const price = parseFloat(selectedOption.dataset.price) || 0;
-
-            // Simpan harga ke hidden input agar benar saat masuk database
             row.querySelector('.price-hidden').value = price;
 
             const stock = parseInt(selectedOption.dataset.stock) || 0;
@@ -353,7 +354,6 @@ $role_display = $_SESSION['role'];
             }
         });
 
-        // Sisa logika DP dan Total tetap sama...
         const dpDisplay = document.getElementById('dp-display');
         const dpHidden = document.getElementById('dp-input');
         const autoDP = Math.ceil(grandTotal * 0.50);
