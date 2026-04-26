@@ -13,17 +13,18 @@ $id_admin_sekarang = $_SESSION['id_user'];
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
     $id_prod = $_POST['id_produksi'];
     $status = $_POST['status_produksi'];
-    
+
     try {
         $pdo->beginTransaction();
 
         // Cek Upload Desain Baru (Revisi)
         if (isset($_FILES['new_design']) && $_FILES['new_design']['error'] === 0) {
             $folder = "uploads/";
-            if (!is_dir($folder)) mkdir($folder, 0777, true);
+            if (!is_dir($folder))
+                mkdir($folder, 0777, true);
             $ext = pathinfo($_FILES['new_design']['name'], PATHINFO_EXTENSION);
             $fileName = "rev_" . time() . "_" . uniqid() . "." . $ext;
-            
+
             if (move_uploaded_file($_FILES['new_design']['tmp_name'], $folder . $fileName)) {
                 $stmtFile = $pdo->prepare("UPDATE produksi SET konfir_desain = ? WHERE id_produksi = ?");
                 $stmtFile->execute([$fileName, $id_prod]);
@@ -57,11 +58,17 @@ $search = $_GET['q'] ?? '';
 $whereClause = " WHERE 1=1";
 $params = [];
 
-if ($status_filter !== 'all') { $whereClause .= " AND pr.status_produksi = ?"; $params[] = $status_filter; }
-if ($search !== '') { $whereClause .= " AND (pl.nama_pelanggan LIKE ? OR p.id_pesanan LIKE ?)"; array_push($params, "%$search%", "%$search%"); }
+if ($status_filter !== 'all') {
+    $whereClause .= " AND pr.status_produksi = ?";
+    $params[] = $status_filter;
+}
+if ($search !== '') {
+    $whereClause .= " AND (pl.nama_pelanggan LIKE ? OR p.id_pesanan LIKE ?)";
+    array_push($params, "%$search%", "%$search%");
+}
 
-$limit = 5; 
-$page = isset($_GET['halaman']) ? (int)$_GET['halaman'] : 1;
+$limit = 5;
+$page = isset($_GET['halaman']) ? (int) $_GET['halaman'] : 1;
 $offset = ($page - 1) * $limit;
 
 $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM produksi pr JOIN pesanan p ON pr.id_pesanan = p.id_pesanan JOIN pelanggan pl ON p.id_pelanggan = pl.id_pelanggan" . $whereClause);
@@ -80,9 +87,9 @@ $sql = "SELECT pr.*, p.id_pesanan, p.tgl_pesanan, pl.nama_pelanggan, u1.username
         LEFT JOIN varian_barang v ON dp.id_varian = v.id_varian
         LEFT JOIN user u1 ON pr.id_user = u1.id_user
         LEFT JOIN user u2 ON pr.id_user_proses = u2.id_user
-        LEFT JOIN user u3 ON pr.id_user_selesai = u3.id_user" 
-        . $whereClause . 
-        " GROUP BY pr.id_produksi ORDER BY p.id_pesanan DESC LIMIT $limit OFFSET $offset";
+        LEFT JOIN user u3 ON pr.id_user_selesai = u3.id_user"
+    . $whereClause .
+    " GROUP BY pr.id_produksi ORDER BY p.id_pesanan DESC LIMIT $limit OFFSET $offset";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -100,43 +107,7 @@ $daftarProduksi = $stmt->fetchAll();
     <link
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600;700;900&display=swap"
         rel="stylesheet">
-    <style>
-    body {
-        font-family: 'Inter', sans-serif;
-        background: black;
-        color: white;
-    }
-
-    .heading-font {
-        font-family: 'Orbitron', sans-serif;
-        letter-spacing: 0.05em;
-    }
-
-    .custom-dark {
-        background-color: #121212;
-    }
-
-    .card-table {
-        background-color: #1a1a1a;
-        border-radius: 30px;
-    }
-
-    .select-status {
-        background-color: #2a2a2a;
-        font-size: 11px;
-        font-weight: 800;
-        padding: 8px 12px;
-        border-radius: 10px;
-        border: none;
-        appearance: none;
-        text-transform: uppercase;
-        width: 140px;
-    }
-
-    input[type="file"]::file-selector-button {
-        display: none;
-    }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="flex h-screen overflow-hidden">
@@ -153,15 +124,15 @@ $daftarProduksi = $stmt->fetchAll();
         </header>
 
         <div class="flex space-x-3 mb-8">
-            <?php 
+            <?php
             $tabs = ['all' => 'Semua', 'antrean' => 'Antrean', 'proses' => 'Proses', 'selesai' => 'Selesai', 'siap diambil' => 'Siap Ambil'];
-            foreach ($tabs as $key => $label): 
+            foreach ($tabs as $key => $label):
                 $isActive = ($status_filter === $key);
-            ?>
-            <a href="?status=<?= $key ?>&q=<?= $search ?>"
-                class="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border <?= $isActive ? 'bg-orange-500 text-black border-orange-500' : 'bg-white/5 text-gray-500 border-gray-800 hover:border-gray-600' ?>">
-                <?= $label ?>
-            </a>
+                ?>
+                <a href="?status=<?= $key ?>&q=<?= $search ?>"
+                    class="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border <?= $isActive ? 'bg-orange-500 text-black border-orange-500' : 'bg-white/5 text-gray-500 border-gray-800 hover:border-gray-600' ?>">
+                    <?= $label ?>
+                </a>
             <?php endforeach; ?>
         </div>
 
@@ -178,71 +149,71 @@ $daftarProduksi = $stmt->fetchAll();
                 </thead>
                 <tbody class="text-gray-300 text-sm font-medium uppercase">
                     <?php foreach ($daftarProduksi as $row): ?>
-                    <tr class="border-b border-gray-800/40 hover:bg-white/5 transition-all">
-                        <form action="produksi.php?status=<?= $status_filter ?>&q=<?= $search ?>" method="POST"
-                            enctype="multipart/form-data">
-                            <input type="hidden" name="id_produksi" value="<?= $row['id_produksi'] ?>">
+                        <tr class="border-b border-gray-800/40 hover:bg-white/5 transition-all">
+                            <form action="produksi.php?status=<?= $status_filter ?>&q=<?= $search ?>" method="POST"
+                                enctype="multipart/form-data">
+                                <input type="hidden" name="id_produksi" value="<?= $row['id_produksi'] ?>">
 
-                            <td class="py-8 px-4 font-mono text-orange-500 font-black text-xl italic">
-                                #<?= $row['id_pesanan'] ?></td>
+                                <td class="py-8 px-4 font-mono text-orange-500 font-black text-xl italic">
+                                    #<?= $row['id_pesanan'] ?></td>
 
-                            <td class="py-8">
-                                <p class="font-black text-gray-100 mb-2"><?= htmlspecialchars($row['nama_pelanggan']) ?>
-                                </p>
-                                <div class="bg-black/30 p-4 rounded-2xl border border-gray-800/50 max-w-xs">
-                                    <p class="text-[10px] text-gray-400 leading-relaxed font-bold">
-                                        <?= $row['daftar_barang'] ?></p>
-                                </div>
-                            </td>
-
-                            <td class="py-8 text-center">
-                                <div class="flex flex-col items-center space-y-2">
-                                    <div class="flex space-x-2">
-                                        <?php if($row['konfir_desain']): ?>
-                                        <button type="button"
-                                            onclick="showDesign('uploads/<?= $row['konfir_desain'] ?>')"
-                                            class="w-10 h-10 bg-orange-500 text-black rounded-xl flex items-center justify-center transition-all hover:bg-white"><i
-                                                class="fas fa-eye"></i></button>
-                                        <?php endif; ?>
-                                        <label
-                                            class="w-10 h-10 bg-white/5 hover:bg-blue-500 text-blue-500 hover:text-white rounded-xl border border-gray-800 flex items-center justify-center cursor-pointer transition-all">
-                                            <i class="fas fa-upload text-xs"></i>
-                                            <input type="file" name="new_design" class="hidden">
-                                        </label>
+                                <td class="py-8">
+                                    <p class="font-black text-gray-100 mb-2"><?= htmlspecialchars($row['nama_pelanggan']) ?>
+                                    </p>
+                                    <div class="bg-black/30 p-4 rounded-2xl border border-gray-800/50 max-w-xs">
+                                        <p class="text-[10px] text-gray-400 leading-relaxed font-bold">
+                                            <?= $row['daftar_barang'] ?>
+                                        </p>
                                     </div>
-                                </div>
-                            </td>
+                                </td>
 
-                            <td class="py-8 text-center">
-                                <select name="status_produksi"
-                                    class="select-status <?= $row['status_produksi'] == 'antrean' ? 'text-blue-400' : ($row['status_produksi'] == 'proses' ? 'text-purple-400' : 'text-green-400') ?>">
-                                    <option value="antrean"
-                                        <?= $row['status_produksi'] == 'antrean' ? 'selected' : '' ?>>Antrean</option>
-                                    <option value="proses" <?= $row['status_produksi'] == 'proses' ? 'selected' : '' ?>>
-                                        Proses</option>
-                                    <option value="selesai"
-                                        <?= $row['status_produksi'] == 'selesai' ? 'selected' : '' ?>>Selesai</option>
-                                    <option value="siap diambil"
-                                        <?= $row['status_produksi'] == 'siap diambil' ? 'selected' : '' ?>>Siap Ambil
-                                    </option>
-                                </select>
-                            </td>
+                                <td class="py-8 text-center">
+                                    <div class="flex flex-col items-center space-y-2">
+                                        <div class="flex space-x-2">
+                                            <?php if ($row['konfir_desain']): ?>
+                                                <button type="button"
+                                                    onclick="showDesign('uploads/<?= $row['konfir_desain'] ?>')"
+                                                    class="w-10 h-10 bg-orange-500 text-black rounded-xl flex items-center justify-center transition-all hover:bg-white"><i
+                                                        class="fas fa-eye"></i></button>
+                                            <?php endif; ?>
+                                            <label
+                                                class="w-10 h-10 bg-white/5 hover:bg-blue-500 text-blue-500 hover:text-white rounded-xl border border-gray-800 flex items-center justify-center cursor-pointer transition-all">
+                                                <i class="fas fa-upload text-xs"></i>
+                                                <input type="file" name="new_design" class="hidden">
+                                            </label>
+                                        </div>
+                                    </div>
+                                </td>
 
-                            <td class="py-8 text-center">
-                                <div class="flex items-center justify-center space-x-2">
-                                    <button type="submit" name="update_status"
-                                        class="bg-white/5 hover:bg-orange-500 text-gray-400 hover:text-black w-10 h-10 rounded-xl transition-all border border-gray-800">
-                                        <i class="fas fa-sync-alt text-sm"></i>
-                                    </button>
-                                    <button type="button"
-                                        onclick="showDetail('<?= addslashes($row['nama_pelanggan']) ?>', '<?= $row['nama_admin_order'] ?? '-' ?>', '<?= $row['nama_admin_proses'] ?? '-' ?>', '<?= $row['nama_admin_selesai'] ?? '-' ?>', '<?= date('d/m/Y H:i', strtotime($row['tgl_pesanan'])) ?>', '<?= addslashes($row['daftar_barang']) ?>')"
-                                        class="bg-white/5 hover:bg-white text-gray-500 hover:text-black w-10 h-10 rounded-xl transition-all border border-gray-800">
-                                        <i class="fas fa-info-circle text-sm"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </form>
-                    </tr>
+                                <td class="py-8 text-center">
+                                    <select name="status_produksi"
+                                        class="select-status <?= $row['status_produksi'] == 'antrean' ? 'text-blue-400' : ($row['status_produksi'] == 'proses' ? 'text-purple-400' : 'text-green-400') ?>">
+                                        <option value="antrean" <?= $row['status_produksi'] == 'antrean' ? 'selected' : '' ?>>
+                                            Antrean</option>
+                                        <option value="proses" <?= $row['status_produksi'] == 'proses' ? 'selected' : '' ?>>
+                                            Proses</option>
+                                        <option value="selesai" <?= $row['status_produksi'] == 'selesai' ? 'selected' : '' ?>>
+                                            Selesai</option>
+                                        <option value="siap diambil" <?= $row['status_produksi'] == 'siap diambil' ? 'selected' : '' ?>>Siap Ambil
+                                        </option>
+                                    </select>
+                                </td>
+
+                                <td class="py-8 text-center">
+                                    <div class="flex items-center justify-center space-x-2">
+                                        <button type="submit" name="update_status"
+                                            class="bg-white/5 hover:bg-orange-500 text-gray-400 hover:text-black w-10 h-10 rounded-xl transition-all border border-gray-800">
+                                            <i class="fas fa-sync-alt text-sm"></i>
+                                        </button>
+                                        <button type="button"
+                                            onclick="showDetail('<?= addslashes($row['nama_pelanggan']) ?>', '<?= $row['nama_admin_order'] ?? '-' ?>', '<?= $row['nama_admin_proses'] ?? '-' ?>', '<?= $row['nama_admin_selesai'] ?? '-' ?>', '<?= date('d/m/Y H:i', strtotime($row['tgl_pesanan'])) ?>', '<?= addslashes($row['daftar_barang']) ?>')"
+                                            class="bg-white/5 hover:bg-white text-gray-500 hover:text-black w-10 h-10 rounded-xl transition-all border border-gray-800">
+                                            <i class="fas fa-info-circle text-sm"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </form>
+                        </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
@@ -294,28 +265,28 @@ $daftarProduksi = $stmt->fetchAll();
     </div>
 
     <script>
-    function showDesign(src) {
-        document.getElementById('img-preview').src = src;
-        document.getElementById('modal-design').classList.remove('hidden');
-    }
+        function showDesign(src) {
+            document.getElementById('img-preview').src = src;
+            document.getElementById('modal-design').classList.remove('hidden');
+        }
 
-    function closeDesign() {
-        document.getElementById('modal-design').classList.add('hidden');
-    }
+        function closeDesign() {
+            document.getElementById('modal-design').classList.add('hidden');
+        }
 
-    function showDetail(nama, adminOrder, adminProses, adminSelesai, tgl, items) {
-        document.getElementById('det-nama').innerText = nama;
-        document.getElementById('det-admin-order').innerText = adminOrder;
-        document.getElementById('det-admin-proses').innerText = adminProses;
-        document.getElementById('det-admin-selesai').innerText = adminSelesai;
-        document.getElementById('det-tgl').innerText = tgl;
-        document.getElementById('det-items').innerHTML = items;
-        document.getElementById('modal-detail').classList.remove('hidden');
-    }
+        function showDetail(nama, adminOrder, adminProses, adminSelesai, tgl, items) {
+            document.getElementById('det-nama').innerText = nama;
+            document.getElementById('det-admin-order').innerText = adminOrder;
+            document.getElementById('det-admin-proses').innerText = adminProses;
+            document.getElementById('det-admin-selesai').innerText = adminSelesai;
+            document.getElementById('det-tgl').innerText = tgl;
+            document.getElementById('det-items').innerHTML = items;
+            document.getElementById('modal-detail').classList.remove('hidden');
+        }
 
-    function closeModal() {
-        document.getElementById('modal-detail').classList.add('hidden');
-    }
+        function closeModal() {
+            document.getElementById('modal-detail').classList.add('hidden');
+        }
     </script>
 </body>
 

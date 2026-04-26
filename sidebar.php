@@ -114,16 +114,4 @@ $is_service_active = in_array($current_page, $service_pages);
         icon.style.transform = dropdown.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';
     }
 </script>
-
-<style>
-    #service-dropdown {
-        transition: all 0.3s ease-in-out;
-        max-height: 0;
-        overflow: hidden;
-    }
-
-    #service-dropdown.show {
-        max-height: 500px;
-        margin-top: 0.5rem;
-    }
-</style>
+<link rel="stylesheet" href="style.css">
