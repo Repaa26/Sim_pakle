@@ -18,18 +18,17 @@ $autoID = "PL" . sprintf('%04d', $nextIDValue);
 $queryKategori = $pdo->query("SELECT * FROM kategori ORDER BY nama_kategori ASC");
 $daftarKategori = $queryKategori->fetchAll(PDO::FETCH_ASSOC);
 
-// --- AMBIL DATA SEMUA VARIAN UNTUK JAVASCRIPT ---
-$queryVarian = $pdo->query("SELECT v.id_varian, v.id_kategori, v.ukuran, v.warna, v.harga, v.stok_tersedia, k.nama_kategori 
+// --- AMBIL DATA SEMUA VARIAN UNTUK JAVASCRIPT (UPDATE: Tambah jenis_lengan) ---
+$queryVarian = $pdo->query("SELECT v.id_varian, v.id_kategori, v.ukuran, v.warna, v.jenis_lengan, v.harga, v.stok_tersedia, k.nama_kategori 
                             FROM varian_barang v 
                             JOIN kategori k ON v.id_kategori = k.id_kategori 
-                            ORDER BY k.nama_kategori ASC, v.ukuran ASC, v.warna ASC");
+                            ORDER BY k.nama_kategori ASC, v.jenis_lengan ASC, v.ukuran ASC, v.warna ASC");
 $daftarVarian = $queryVarian->fetchAll(PDO::FETCH_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $pdo->beginTransaction();
 
-        // 1. Logika Pelanggan
         $no_telp = $_POST['no_telp'];
         $nama_pelanggan = $_POST['nama_pelanggan'];
         $alamat = $_POST['alamat'];
@@ -48,7 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id_pelanggan = $pdo->lastInsertId();
         }
 
-        // 2. Simpan Pembayaran
         $total_harga = (float) $_POST['total_hidden'];
         $jumlah_bayar = (float) $_POST['dp_input'];
         $metode_awal = $_POST['metode_bayar'];
@@ -67,18 +65,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmtPay->execute([$status_bayar, $jumlah_bayar, $tgl_dp, $tgl_lunas, $admin_dp, $admin_lunas, $m_dp, $m_lunas]);
         $id_pembayaran = $pdo->lastInsertId();
 
-        // 3. SIMPAN PESANAN UTAMA
         $stmtOrder = $pdo->prepare("INSERT INTO pesanan (id_pelanggan, id_pembayaran, total_harga, tgl_pesanan, status_acc) VALUES (?, ?, ?, NOW(), 'pending')");
         $stmtOrder->execute([$id_pelanggan, $id_pembayaran, $total_harga]);
         $id_pesanan = $pdo->lastInsertId();
 
-        // 4. Detail Barang & Update Stok Varian
         $stmtDetail = $pdo->prepare("INSERT INTO detail_pesanan (id_pesanan, id_kategori, id_varian, jumlah, harga_satuan, subtotal, keterangan) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmtUpdateStok = $pdo->prepare("UPDATE varian_barang SET stok_tersedia = stok_tersedia - ? WHERE id_varian = ?");
-        $stmtCekStok = $pdo->prepare("SELECT k.id_kategori, k.nama_kategori, v.ukuran, v.warna, v.stok_tersedia FROM varian_barang v JOIN kategori k ON v.id_kategori = k.id_kategori WHERE v.id_varian = ?");
+        $stmtCekStok = $pdo->prepare("SELECT k.id_kategori, k.nama_kategori, v.jenis_lengan, v.ukuran, v.warna, v.stok_tersedia FROM varian_barang v JOIN kategori k ON v.id_kategori = k.id_kategori WHERE v.id_varian = ?");
 
         foreach ($_POST['id_varian'] as $key => $id_varian) {
-            if ($id_varian == "0") continue;
+            if ($id_varian == "0")
+                continue;
 
             $qty_input = (int) $_POST['qty'][$key];
             $harga_satuan = (float) $_POST['harga_satuan_hidden'][$key];
@@ -89,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $dataVarian = $stmtCekStok->fetch();
 
             if ($qty_input > $dataVarian['stok_tersedia']) {
-                $nama_lengkap = $dataVarian['nama_kategori'] . " [" . $dataVarian['ukuran'] . "/" . $dataVarian['warna'] . "]";
+                $nama_lengkap = $dataVarian['nama_kategori'] . " [" . $dataVarian['jenis_lengan'] . "/" . $dataVarian['ukuran'] . "/" . $dataVarian['warna'] . "]";
                 throw new Exception("Stok " . $nama_lengkap . " tidak mencukupi!");
             }
 
@@ -97,11 +94,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmtUpdateStok->execute([$qty_input, $id_varian]);
         }
 
-        // 5. Inisialisasi Produksi & Upload File
         $newFile = null;
         if (isset($_FILES['desain']) && !empty($_FILES['desain']['name'][0])) {
             $folder = "uploads/";
-            if (!is_dir($folder)) mkdir($folder, 0777, true);
+            if (!is_dir($folder))
+                mkdir($folder, 0777, true);
             if ($_FILES['desain']['error'][0] === 0) {
                 $ext = pathinfo($_FILES['desain']['name'][0], PATHINFO_EXTENSION);
                 $newFile = "desain_" . time() . "_" . uniqid() . "." . $ext;
@@ -151,7 +148,6 @@ $role_display = $_SESSION['role'];
         outline: none;
     }
 
-    /* Style select agar rapi (panah SVG) */
     select.input-dark {
         appearance: none;
         background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
@@ -169,8 +165,9 @@ $role_display = $_SESSION['role'];
 
 <body class="bg-black flex h-screen overflow-hidden text-white">
 
-    <?php require 'sidebar.php'; ?>
-
+    <div class="flex h-screen overflow-hidden"> <?php require 'sidebar.php'; ?>
+        <main class="flex-1 overflow-y-auto">
+    </div>
     <main class="flex-1 custom-dark p-12 overflow-y-auto">
         <header class="flex justify-between items-baseline mb-8 border-b border-gray-800/50 pb-6">
             <div>
@@ -195,13 +192,13 @@ $role_display = $_SESSION['role'];
                         <div class="w-2/3">
                             <p class="text-gray-500 text-[10px] mb-1 uppercase font-bold">Nama :</p>
                             <input type="text" name="nama_pelanggan" placeholder="Nama Lengkap" required
-                                class="w-full input-dark p-4 rounded-xl">
+                                class="w-full input-dark p-4 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none">
                         </div>
                     </div>
                     <input type="text" name="no_telp" placeholder="Nomor Telepon" required
-                        class="w-full input-dark p-4 rounded-xl">
+                        class="w-full input-dark p-4 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none">
                     <textarea name="alamat" placeholder="Alamat Lengkap" required rows="2"
-                        class="w-full input-dark p-4 rounded-xl resize-none"></textarea>
+                        class="w-full input-dark p-4 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none"></textarea>
                 </div>
 
                 <div class="space-y-4">
@@ -213,25 +210,33 @@ $role_display = $_SESSION['role'];
                             <div class="flex flex-col md:flex-row gap-3 items-start">
 
                                 <div class="flex-1 flex flex-col gap-2 w-full">
-                                    <select
-                                        class="kategori-select input-dark p-3 rounded-xl text-xs uppercase font-bold"
-                                        required onchange="updateSizes(this)">
-                                        <option value="">Pilih Kategori Produk</option>
-                                        <?php foreach ($daftarKategori as $k): ?>
-                                        <option value="<?= $k['id_kategori'] ?>">
-                                            <?= htmlspecialchars($k['nama_kategori']) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
+                                    <div class="flex gap-2">
+                                        <select
+                                            class="kategori-select flex-1 input-dark p-3 rounded-xl text-xs uppercase font-bold"
+                                            required onchange="updateLengan(this)">
+                                            <option value="">1. Kategori</option>
+                                            <?php foreach ($daftarKategori as $k): ?>
+                                            <option value="<?= $k['id_kategori'] ?>">
+                                                <?= htmlspecialchars($k['nama_kategori']) ?>
+                                            </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <select
+                                            class="lengan-select flex-1 input-dark p-3 rounded-xl text-xs uppercase font-bold"
+                                            required onchange="updateSizes(this)" disabled>
+                                            <option value="">2. Lengan</option>
+                                        </select>
+                                    </div>
                                     <div class="flex gap-2">
                                         <select
                                             class="ukuran-select flex-1 input-dark p-3 rounded-xl text-xs uppercase font-bold"
                                             required onchange="updateColors(this)" disabled>
-                                            <option value="">Pilih Ukuran</option>
+                                            <option value="">3. Ukuran</option>
                                         </select>
                                         <select
                                             class="warna-select flex-1 input-dark p-3 rounded-xl text-xs uppercase font-bold"
                                             required onchange="selectVariant(this)" disabled>
-                                            <option value="">Pilih Warna</option>
+                                            <option value="">4. Warna</option>
                                         </select>
                                     </div>
 
@@ -343,7 +348,6 @@ $role_display = $_SESSION['role'];
     </main>
 
     <script>
-    // --- INJEKSI DATA DATABASE KE JAVASCRIPT ---
     const dbVariants = <?= json_encode($daftarVarian) ?>;
 
     function toggleDropdown() {
@@ -351,29 +355,65 @@ $role_display = $_SESSION['role'];
         document.getElementById('chevron-icon').classList.toggle('rotate-180');
     }
 
-    // --- LOGIKA CASCADING DROPDOWN (BERtingkat) ---
-    function updateSizes(el) {
+    // 1. Pilih Kategori -> Update Lengan
+    function updateLengan(el) {
         const row = el.closest('.item-row');
+        const lenganSel = row.querySelector('.lengan-select');
         const sizeSel = row.querySelector('.ukuran-select');
         const colorSel = row.querySelector('.warna-select');
         const hiddenId = row.querySelector('.varian-hidden');
 
         const catId = el.value;
 
-        // Reset dropdown anak
-        sizeSel.innerHTML = '<option value="">Pilih Ukuran</option>';
-        colorSel.innerHTML = '<option value="">Pilih Warna</option>';
+        lenganSel.innerHTML = '<option value="">2. Lengan</option>';
+        sizeSel.innerHTML = '<option value="">3. Ukuran</option>';
+        colorSel.innerHTML = '<option value="">4. Warna</option>';
+        lenganSel.disabled = true;
+        sizeSel.disabled = true;
         colorSel.disabled = true;
         hiddenId.value = "0";
 
         if (!catId) {
-            sizeSel.disabled = true;
             calculate();
             return;
         }
 
-        // Cari ukuran unik berdasarkan Kategori yang dipilih
-        const sizes = dbVariants.filter(v => v.id_kategori == catId).map(v => v.ukuran).filter((value, index, self) => self.indexOf(value) === index);
+        const lengans = dbVariants
+            .filter(v => v.id_kategori == catId)
+            .reduce((acc, v) => acc.includes(v.jenis_lengan) ? acc : [...acc, v.jenis_lengan], []);
+        lengans.forEach(l => {
+            lenganSel.innerHTML += `<option value="${l}">${l}</option>`;
+        });
+
+        lenganSel.disabled = false;
+        calculate();
+    }
+
+    // 2. Pilih Lengan -> Update Ukuran
+    function updateSizes(el) {
+        const row = el.closest('.item-row');
+        const catId = row.querySelector('.kategori-select').value;
+        const sizeSel = row.querySelector('.ukuran-select');
+        const colorSel = row.querySelector('.warna-select');
+        const hiddenId = row.querySelector('.varian-hidden');
+
+        const lengan = el.value;
+
+        sizeSel.innerHTML = '<option value="">3. Ukuran</option>';
+        colorSel.innerHTML = '<option value="">4. Warna</option>';
+        sizeSel.disabled = true;
+        colorSel.disabled = true;
+        hiddenId.value = "0";
+
+        if (!lengan) {
+            calculate();
+            return;
+        }
+
+        const sizes = dbVariants
+            .filter(v => v.id_kategori == catId && v.jenis_lengan === lengan)
+            .map(v => v.ukuran)
+            .reduce((acc, ukuran) => acc.includes(ukuran) ? acc : [...acc, ukuran], []);
         sizes.forEach(sz => {
             sizeSel.innerHTML += `<option value="${sz}">${sz}</option>`;
         });
@@ -382,15 +422,17 @@ $role_display = $_SESSION['role'];
         calculate();
     }
 
+    // 3. Pilih Ukuran -> Update Warna
     function updateColors(el) {
         const row = el.closest('.item-row');
         const catId = row.querySelector('.kategori-select').value;
+        const lengan = row.querySelector('.lengan-select').value;
         const colorSel = row.querySelector('.warna-select');
         const hiddenId = row.querySelector('.varian-hidden');
 
         const size = el.value;
         hiddenId.value = "0";
-        colorSel.innerHTML = '<option value="">Pilih Warna</option>';
+        colorSel.innerHTML = '<option value="">4. Warna</option>';
 
         if (!size) {
             colorSel.disabled = true;
@@ -398,8 +440,7 @@ $role_display = $_SESSION['role'];
             return;
         }
 
-        // Cari warna berdasarkan Kategori & Ukuran yang dipilih
-        const colors = dbVariants.filter(v => v.id_kategori == catId && v.ukuran === size);
+        const colors = dbVariants.filter(v => v.id_kategori == catId && v.jenis_lengan === lengan && v.ukuran === size);
         colors.forEach(c => {
             colorSel.innerHTML += `<option value="${c.warna}">${c.warna}</option>`;
         });
@@ -408,9 +449,11 @@ $role_display = $_SESSION['role'];
         calculate();
     }
 
+    // 4. Pilih Warna -> Kunci Harga & Stok
     function selectVariant(el) {
         const row = el.closest('.item-row');
         const catId = row.querySelector('.kategori-select').value;
+        const lengan = row.querySelector('.lengan-select').value;
         const size = row.querySelector('.ukuran-select').value;
         const color = el.value;
 
@@ -425,28 +468,28 @@ $role_display = $_SESSION['role'];
             return;
         }
 
-        // Cocokkan id_varian yang pas
-        const variant = dbVariants.find(v => v.id_kategori == catId && v.ukuran === size && v.warna === color);
+        const variant = dbVariants.find(v => v.id_kategori == catId && v.jenis_lengan === lengan && v.ukuran === size &&
+            v.warna === color);
         if (variant) {
             hiddenId.value = variant.id_varian;
             hiddenPrice.value = variant.harga;
             hiddenStock.value = variant.stok_tersedia;
-            summaryName.value = `${variant.nama_kategori} [${variant.ukuran}/${variant.warna}]`;
+            summaryName.value = `${variant.nama_kategori} [${variant.jenis_lengan}/${variant.ukuran}/${variant.warna}]`;
         }
         calculate();
     }
 
-    // --- LOGIKA TAMBAH/HAPUS BARIS ---
     function addItem() {
         const container = document.getElementById('items-container');
         const rows = document.querySelectorAll('.item-row');
         const newRow = rows[0].cloneNode(true);
 
-        // Reset field untuk baris baru
         newRow.querySelector('.kategori-select').selectedIndex = 0;
-        newRow.querySelector('.ukuran-select').innerHTML = '<option value="">Pilih Ukuran</option>';
+        newRow.querySelector('.lengan-select').innerHTML = '<option value="">2. Lengan</option>';
+        newRow.querySelector('.lengan-select').disabled = true;
+        newRow.querySelector('.ukuran-select').innerHTML = '<option value="">3. Ukuran</option>';
         newRow.querySelector('.ukuran-select').disabled = true;
-        newRow.querySelector('.warna-select').innerHTML = '<option value="">Pilih Warna</option>';
+        newRow.querySelector('.warna-select').innerHTML = '<option value="">4. Warna</option>';
         newRow.querySelector('.warna-select').disabled = true;
 
         newRow.querySelector('.qty-input').value = "";
@@ -466,7 +509,6 @@ $role_display = $_SESSION['role'];
         }
     }
 
-    // --- LOGIKA PERHITUNGAN BIAYA & STOK ---
     function formatNumber(angka) {
         return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     }
@@ -495,7 +537,7 @@ $role_display = $_SESSION['role'];
                 grandTotal += subtotal;
                 summaryBody.innerHTML += `
             <tr class="border-b border-gray-800/20">
-                <td class="py-3 uppercase font-bold text-[12px] leading-tight">${name}</td>
+                <td class="py-3 uppercase font-bold text-[10px] leading-tight">${name}</td>
                 <td class="py-3 text-center text-[12px]">${qty}x</td>
                 <td class="py-3 text-right text-gray-200 font-mono text-[12px]">Rp ${formatNumber(subtotal)}</td>
             </tr>`;
