@@ -9,7 +9,10 @@ if (!isset($_SESSION['id_user'])) {
 }
 
 // --- HELPER ---
-function formatRupiah($angka) { return "Rp " . number_format($angka, 0, ',', '.'); }
+function formatRupiah($angka)
+{
+    return "Rp " . number_format($angka, 0, ',', '.');
+}
 
 $username_display = $_SESSION['username'];
 $role_display = $_SESSION['role'];
@@ -22,8 +25,8 @@ if ($role_display === 'admin') {
     $stat_utama = $pdo->query($sqlPemasukan)->fetch()['total'] ?? 0;
     $label_utama = "Total Pemasukan";
 } else {
-    // Karyawan lihat Stok (Penting buat Produksi)
-    $stat_utama = $pdo->query("SELECT SUM(stok_tersedia) FROM barang")->fetchColumn() ?? 0;
+    // Karyawan lihat Stok (Penting buat Produksi) - UPDATE KE TABEL varian_barang
+    $stat_utama = $pdo->query("SELECT SUM(stok_tersedia) FROM varian_barang")->fetchColumn() ?? 0;
     $label_utama = "Total Stok Bahan";
 }
 
@@ -43,12 +46,21 @@ for ($i = 6; $i >= 0; $i--) {
 }
 
 // --- 3. TOP PRODUCTS & RECENT TRANSACTIONS ---
-$topProducts = $pdo->query("SELECT b.nama_barang, SUM(dp.jumlah) as total FROM detail_pesanan dp JOIN barang b ON dp.id_barang = b.id_barang GROUP BY b.id_barang ORDER BY total DESC LIMIT 3")->fetchAll();
+// UPDATE: JOIN ke tabel kategori karena tabel barang sudah tidak ada
+$topProducts = $pdo->query("SELECT k.nama_kategori as nama_barang, SUM(dp.jumlah) as total 
+                            FROM detail_pesanan dp 
+                            JOIN kategori k ON dp.id_kategori = k.id_kategori 
+                            GROUP BY k.id_kategori 
+                            ORDER BY total DESC LIMIT 3")->fetchAll();
 
 $limit = 5;
 $page = isset($_GET['halaman']) ? (int) $_GET['halaman'] : 1;
 $offset = ($page - 1) * $limit;
-$recentOrders = $pdo->query("SELECT p.id_pesanan, pl.nama_pelanggan, p.total_harga, p.tgl_pesanan, pem.status_bayar FROM pesanan p JOIN pelanggan pl ON p.id_pelanggan = pl.id_pelanggan JOIN pembayaran pem ON p.id_pembayaran = pem.id_pembayaran ORDER BY p.tgl_pesanan DESC LIMIT $limit OFFSET $offset")->fetchAll();
+$recentOrders = $pdo->query("SELECT p.id_pesanan, pl.nama_pelanggan, p.total_harga, p.tgl_pesanan, pem.status_bayar 
+                             FROM pesanan p 
+                             JOIN pelanggan pl ON p.id_pelanggan = pl.id_pelanggan 
+                             JOIN pembayaran pem ON p.id_pembayaran = pem.id_pembayaran 
+                             ORDER BY p.tgl_pesanan DESC LIMIT $limit OFFSET $offset")->fetchAll();
 $totalHalaman = ceil($pdo->query("SELECT COUNT(*) FROM pesanan")->fetchColumn() / $limit);
 ?>
 
@@ -89,7 +101,8 @@ $totalHalaman = ceil($pdo->query("SELECT COUNT(*) FROM pesanan")->fetchColumn() 
             <div class="card-table p-8 border border-gray-800 shadow-2xl relative overflow-hidden group">
                 <p
                     class="<?= $role_display === 'admin' ? 'text-orange-500' : 'text-yellow-500' ?> font-black text-[10px] mb-4 uppercase tracking-[0.3em] heading-font">
-                    <?= $label_utama ?></p>
+                    <?= $label_utama ?>
+                </p>
                 <p class="text-white text-2xl font-black">
                     <?= $role_display === 'admin' ? formatRupiah($stat_utama) : $stat_utama . " <span class='text-xs'>Units</span>" ?>
                 </p>
@@ -127,20 +140,20 @@ $totalHalaman = ceil($pdo->query("SELECT COUNT(*) FROM pesanan")->fetchColumn() 
                         Frequency</span>
                 </div>
                 <div class="flex items-end justify-between h-64 px-4">
-                    <?php foreach ($dailySales as $data): 
+                    <?php foreach ($dailySales as $data):
                         $maxHeight = max($data['count'] * 20, 10); ?>
-                    <div class="flex flex-col items-center group w-full">
-                        <div class="relative w-12 flex flex-col justify-end h-48">
-                            <div
-                                class="absolute -top-8 left-1/2 -translate-x-1/2 bg-white text-black text-[9px] font-black px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity uppercase">
-                                <?= $data['count'] ?> Order
+                        <div class="flex flex-col items-center group w-full">
+                            <div class="relative w-12 flex flex-col justify-end h-48">
+                                <div
+                                    class="absolute -top-8 left-1/2 -translate-x-1/2 bg-white text-black text-[9px] font-black px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity uppercase">
+                                    <?= $data['count'] ?> Order
+                                </div>
+                                <div class="chart-bar w-full rounded-t-xl <?= $data['isToday'] ? 'bg-orange-500' : 'bg-gray-800' ?>"
+                                    style="height: <?= $maxHeight ?>px"></div>
                             </div>
-                            <div class="chart-bar w-full rounded-t-xl <?= $data['isToday'] ? 'bg-orange-500' : 'bg-gray-800' ?>"
-                                style="height: <?= $maxHeight ?>px"></div>
+                            <span
+                                class="mt-4 text-[10px] font-black uppercase <?= $data['isToday'] ? 'text-orange-500' : 'text-gray-600' ?>"><?= $data['day'] ?></span>
                         </div>
-                        <span
-                            class="mt-4 text-[10px] font-black uppercase <?= $data['isToday'] ? 'text-orange-500' : 'text-gray-600' ?>"><?= $data['day'] ?></span>
-                    </div>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -151,11 +164,11 @@ $totalHalaman = ceil($pdo->query("SELECT COUNT(*) FROM pesanan")->fetchColumn() 
                     </h3>
                     <div class="space-y-4">
                         <?php foreach ($topProducts as $top): ?>
-                        <div
-                            class="flex justify-between items-center bg-black/40 p-4 rounded-2xl border border-gray-800/50">
-                            <p class="text-[11px] font-black uppercase text-gray-300"><?= $top['nama_barang'] ?></p>
-                            <p class="text-orange-500 font-mono font-bold text-xs"><?= $top['total'] ?> PCS</p>
-                        </div>
+                            <div
+                                class="flex justify-between items-center bg-black/40 p-4 rounded-2xl border border-gray-800/50">
+                                <p class="text-[11px] font-black uppercase text-gray-300"><?= $top['nama_barang'] ?></p>
+                                <p class="text-orange-500 font-mono font-bold text-xs"><?= $top['total'] ?> PCS</p>
+                            </div>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -188,20 +201,20 @@ $totalHalaman = ceil($pdo->query("SELECT COUNT(*) FROM pesanan")->fetchColumn() 
                 </thead>
                 <tbody class="text-gray-300 text-[13px] font-bold tracking-wide uppercase">
                     <?php foreach ($recentOrders as $order): ?>
-                    <tr class="border-b border-gray-800/40 hover:bg-white/5 transition-all">
-                        <td class="py-5 px-4 text-orange-500 font-mono font-black">#<?= $order['id_pesanan'] ?></td>
-                        <td class="py-5 text-white"><?= htmlspecialchars($order['nama_pelanggan']) ?></td>
-                        <td class="py-5 font-mono"><?= formatRupiah($order['total_harga']) ?></td>
-                        <td class="py-5">
-                            <span
-                                class="px-3 py-1 rounded-full text-[11px] font-black <?= $order['status_bayar'] == 'lunas' ? 'text-green-500' : 'text-red-500' ?>">
-                                <?= $order['status_bayar'] ?>
-                            </span>
-                        </td>
-                        <td class="py-5 text-center text-gray-600 font-mono text-[12px]">
-                            <?= date('d/m/y H:i', strtotime($order['tgl_pesanan'])) ?>
-                        </td>
-                    </tr>
+                        <tr class="border-b border-gray-800/40 hover:bg-white/5 transition-all">
+                            <td class="py-5 px-4 text-orange-500 font-mono font-black">#<?= $order['id_pesanan'] ?></td>
+                            <td class="py-5 text-white"><?= htmlspecialchars($order['nama_pelanggan']) ?></td>
+                            <td class="py-5 font-mono"><?= formatRupiah($order['total_harga']) ?></td>
+                            <td class="py-5">
+                                <span
+                                    class="px-3 py-1 rounded-full text-[11px] font-black <?= $order['status_bayar'] == 'lunas' ? 'text-green-500' : 'text-red-500' ?>">
+                                    <?= $order['status_bayar'] ?>
+                                </span>
+                            </td>
+                            <td class="py-5 text-center text-gray-600 font-mono text-[12px]">
+                                <?= date('d/m/y H:i', strtotime($order['tgl_pesanan'])) ?>
+                            </td>
+                        </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
