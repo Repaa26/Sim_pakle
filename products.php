@@ -21,6 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nama_kategori = strtoupper($_POST['nama_kategori']);
     $ukuran = strtoupper($_POST['ukuran']);
     $warna = strtoupper($_POST['warna']);
+    $jenis_lengan = strtoupper($_POST['jenis_lengan']); // VARIAN BARU
     $harga = $_POST['harga_barang'];
     $stok = $_POST['stok_tersedia'];
     $satuan = $_POST['satuan'];
@@ -40,9 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (isset($_POST['add_barang'])) {
         try {
-            $stmt = $pdo->prepare("INSERT INTO varian_barang (id_kategori, ukuran, warna, harga, stok_tersedia, satuan) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$id_kategori, $ukuran, $warna, $harga, $stok, $satuan]);
-            header("Location: products.php?msg=success&item=$nama_kategori [$ukuran / $warna]&qty=$stok&prc=$harga");
+            $stmt = $pdo->prepare("INSERT INTO varian_barang (id_kategori, ukuran, warna, jenis_lengan, harga, stok_tersedia, satuan) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$id_kategori, $ukuran, $warna, $jenis_lengan, $harga, $stok, $satuan]);
+            header("Location: products.php?msg=success&item=$nama_kategori [$jenis_lengan / $ukuran / $warna]&qty=$stok&prc=$harga");
             exit;
         } catch (Exception $e) {
             $error = $e->getMessage();
@@ -50,9 +51,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (isset($_POST['update_barang'])) {
         $id_varian = $_POST['id_varian'];
         try {
-            $stmt = $pdo->prepare("UPDATE varian_barang SET id_kategori = ?, ukuran = ?, warna = ?, harga = ?, stok_tersedia = ?, satuan = ? WHERE id_varian = ?");
-            $stmt->execute([$id_kategori, $ukuran, $warna, $harga, $stok, $satuan, $id_varian]);
-            header("Location: products.php?msg=updated&item=$nama_kategori [$ukuran / $warna]&qty=$stok&prc=$harga");
+            $stmt = $pdo->prepare("UPDATE varian_barang SET id_kategori = ?, ukuran = ?, warna = ?, jenis_lengan = ?, harga = ?, stok_tersedia = ?, satuan = ? WHERE id_varian = ?");
+            $stmt->execute([$id_kategori, $ukuran, $warna, $jenis_lengan, $harga, $stok, $satuan, $id_varian]);
+            header("Location: products.php?msg=updated&item=$nama_kategori [$jenis_lengan / $ukuran / $warna]&qty=$stok&prc=$harga");
             exit;
         } catch (Exception $e) {
             $error = $e->getMessage();
@@ -169,8 +170,8 @@ $role_display = $_SESSION['role'];
         <header class="flex justify-between items-baseline mb-8 border-b border-gray-800/50 pb-6">
             <div>
                 <h2 class="heading-font text-white text-4xl uppercase text-orange-500">Inventory</h2>
-                <p class="text-gray-500 text-[10px] font-black uppercase tracking-[0.4em] mt-2">Manage Categories &
-                    Stock</p>
+                <p class="text-gray-500 text-[10px] font-black uppercase tracking-[0.4em] mt-2">Manage Categories,
+                    Sleeves, & Stock</p>
             </div>
             <form action="" method="GET" class="relative w-80">
                 <input type="text" name="q" value="<?= htmlspecialchars($search) ?>"
@@ -204,6 +205,8 @@ $role_display = $_SESSION['role'];
                                     <?= htmlspecialchars($row['nama_kategori']) ?>
                                 </p>
                                 <p class="text-[9px] text-orange-500 font-bold uppercase mt-1">
+                                    Lengan: <span
+                                        class="text-white mr-2"><?= htmlspecialchars($row['jenis_lengan']) ?></span>
                                     Size: <span class="text-white mr-2"><?= htmlspecialchars($row['ukuran']) ?></span>
                                     Color: <span class="text-white"><?= htmlspecialchars($row['warna']) ?></span>
                                 </p>
@@ -218,7 +221,7 @@ $role_display = $_SESSION['role'];
                             </td>
                             <td class="py-5 text-center">
                                 <button
-                                    onclick="openModal('edit', '<?= $row['id_varian'] ?>', '<?= addslashes($row['nama_kategori']) ?>', '<?= addslashes($row['ukuran']) ?>', '<?= addslashes($row['warna']) ?>', '<?= $row['harga'] ?>', '<?= $row['stok_tersedia'] ?>', '<?= $row['satuan'] ?>')"
+                                    onclick="openModal('edit', '<?= $row['id_varian'] ?>', '<?= addslashes($row['nama_kategori']) ?>', '<?= addslashes($row['jenis_lengan']) ?>', '<?= addslashes($row['ukuran']) ?>', '<?= addslashes($row['warna']) ?>', '<?= $row['harga'] ?>', '<?= $row['stok_tersedia'] ?>', '<?= $row['satuan'] ?>')"
                                     class="bg-white/5 hover:bg-orange-500 hover:text-black px-4 py-2 rounded-xl border border-gray-800 transition-all text-[10px] font-bold uppercase">Update</button>
                             </td>
                         </tr>
@@ -247,7 +250,7 @@ $role_display = $_SESSION['role'];
     <div id="inventoryModal"
         class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
         <div
-            class="bg-[#1a1a1a] w-full max-w-lg rounded-[30px] border border-gray-800 p-10 shadow-2xl relative overflow-hidden transition-all">
+            class="bg-[#1a1a1a] w-full max-w-xl rounded-[30px] border border-gray-800 p-10 shadow-2xl relative overflow-hidden transition-all">
             <div class="flex justify-between items-start mb-8">
                 <h3 id="modalTitle" class="heading-font text-2xl uppercase text-orange-500">Add New Variant</h3>
                 <button onclick="closeModal()" class="text-gray-500 hover:text-white"><i
@@ -259,16 +262,28 @@ $role_display = $_SESSION['role'];
                 <input type="hidden" name="id_varian" id="modal_id">
                 <input type="hidden" id="submit_type" name="add_barang">
 
-                <div>
-                    <label class="text-[9px] font-black uppercase text-gray-400 mb-2 block ml-1">Category Name</label>
-                    <input type="text" name="nama_kategori" id="modal_kategori" list="daftar_kategori" required
-                        placeholder="E.G. BAJU BOXY..."
-                        class="w-full input-dark p-4 rounded-2xl font-bold uppercase text-xs">
-                    <datalist id="daftar_kategori">
-                        <?php foreach ($kategoriList as $k): ?>
-                            <option value="<?= htmlspecialchars($k['nama_kategori']) ?>">
-                            <?php endforeach; ?>
-                    </datalist>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[9px] font-black uppercase text-gray-400 mb-2 block ml-1">Category
+                            Name</label>
+                        <input type="text" name="nama_kategori" id="modal_kategori" list="daftar_kategori" required
+                            placeholder="E.G. BAJU BOXY..."
+                            class="w-full input-dark p-4 rounded-2xl font-bold uppercase text-xs">
+                        <datalist id="daftar_kategori">
+                            <?php foreach ($kategoriList as $k): ?>
+                                <option value="<?= htmlspecialchars($k['nama_kategori']) ?>">
+                                <?php endforeach; ?>
+                        </datalist>
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black uppercase text-gray-400 mb-2 block ml-1">Sleeve
+                            (Lengan)</label>
+                        <select name="jenis_lengan" id="modal_lengan" required
+                            class="w-full input-dark p-4 rounded-2xl font-bold uppercase text-xs">
+                            <option value="PENDEK">PENDEK</option>
+                            <option value="PANJANG">PANJANG</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
@@ -380,7 +395,8 @@ $role_display = $_SESSION['role'];
             hiddenPrice.value = this.value.replace(/\./g, '');
         });
 
-        function openModal(mode, id = '', kategori = '', ukuran = '', warna = '', harga = '', stok = '', satuan = 'PCS') {
+        function openModal(mode, id = '', kategori = '', lengan = 'PENDEK', ukuran = '', warna = '', harga = '', stok = '',
+            satuan = 'PCS') {
             document.getElementById('inventoryForm').reset();
             const title = document.getElementById('modalTitle');
             const submitType = document.getElementById('submit_type');
@@ -395,10 +411,18 @@ $role_display = $_SESSION['role'];
                 submitType.name = "update_barang";
                 document.getElementById('modal_id').value = id;
                 document.getElementById('modal_kategori').value = kategori;
+                document.getElementById('modal_lengan').value = lengan;
                 document.getElementById('modal_ukuran').value = ukuran;
                 document.getElementById('modal_warna').value = warna;
-                hiddenPrice.value = harga;
-                priceInput.value = formatRupiah(harga);
+
+                // --- FIX HARGA DECIMAL ---
+                // Hilangkan .00 dari database sebelum di-format
+                let hargaBulat = Math.round(parseFloat(harga));
+
+                hiddenPrice.value = hargaBulat;
+                priceInput.value = formatRupiah(hargaBulat);
+                // -------------------------
+
                 document.getElementById('modal_stok').value = stok;
                 document.getElementById('modal_satuan').value = satuan;
             }
@@ -412,6 +436,7 @@ $role_display = $_SESSION['role'];
         function showConfirm(e) {
             e.preventDefault();
             const kategori = document.getElementById('modal_kategori').value;
+            const lengan = document.getElementById('modal_lengan').value;
             const size = document.getElementById('modal_ukuran').value;
             const color = document.getElementById('modal_warna').value;
             const hargaDisp = document.getElementById('modal_harga_display').value;
@@ -419,7 +444,8 @@ $role_display = $_SESSION['role'];
             const satuan = document.getElementById('modal_satuan').value;
 
             document.getElementById('conf_nama').innerText = kategori;
-            document.getElementById('conf_varian').innerText = "SIZE: " + size + " | COLOR: " + color;
+            document.getElementById('conf_varian').innerText = "LENGAN: " + lengan + " | SIZE: " + size + " | COLOR: " +
+                color;
             document.getElementById('conf_harga').innerText = "Rp " + hargaDisp;
             document.getElementById('conf_stok').innerText = stok + " " + satuan;
 
@@ -438,6 +464,7 @@ $role_display = $_SESSION['role'];
         function hideAlert() {
             document.getElementById('customAlert').classList.add('hidden');
         }
+
         window.onload = () => {
             const queryString = window.location.search.substring(1);
             const params = {};
