@@ -2,15 +2,15 @@
 session_start();
 require 'koneksi.php';
 
+// Proteksi Halaman
 if (!isset($_SESSION['id_user'])) {
     header("Location: login.php");
     exit;
 }
 
 // --- HELPER ---
-function formatRupiah($angka)
-{
-    return "Rp " . number_format($angka, 0, ',', '.');
+function formatRupiah($angka) { 
+    return "Rp " . number_format($angka, 0, ',', '.'); 
 }
 
 $username_display = $_SESSION['username'];
@@ -32,23 +32,28 @@ $stmtSum->execute([$tgl_awal, $tgl_akhir]);
 $summary = $stmtSum->fetch();
 
 // --- 2. PRODUK PALING LARIS ---
-$sqlLaris = "SELECT b.nama_barang, SUM(dp.jumlah) as total_terjual
+$sqlLaris = "SELECT k.nama_kategori as nama_barang, SUM(dp.jumlah) as total_terjual
              FROM detail_pesanan dp
-             JOIN barang b ON dp.id_barang = b.id_barang
+             JOIN kategori k ON dp.id_kategori = k.id_kategori
              JOIN pesanan p ON dp.id_pesanan = p.id_pesanan
              WHERE DATE(p.tgl_pesanan) BETWEEN ? AND ?
-             GROUP BY b.id_barang 
+             GROUP BY k.id_kategori 
              ORDER BY total_terjual DESC LIMIT 1";
 $stmtLaris = $pdo->prepare($sqlLaris);
 $stmtLaris->execute([$tgl_awal, $tgl_akhir]);
 $produkTerlaris = $stmtLaris->fetch();
 
-// --- 3. DATA TABEL DETAIL ---
-$sqlDetail = "SELECT p.id_pesanan, p.tgl_pesanan, pl.nama_pelanggan, p.total_harga, pem.status_bayar 
+// --- 3. DATA TABEL DETAIL (UPDATE: TAMBAH KETERANGAN BARANG) ---
+$sqlDetail = "SELECT p.id_pesanan, p.tgl_pesanan, pl.nama_pelanggan, p.total_harga, pem.status_bayar,
+              GROUP_CONCAT(CONCAT(k.nama_kategori, ' [', v.jenis_lengan, '/', v.ukuran, '/', v.warna, '] (', dp.jumlah, 'x)') SEPARATOR '<br>') as keterangan_barang
               FROM pesanan p 
               JOIN pelanggan pl ON p.id_pelanggan = pl.id_pelanggan 
               JOIN pembayaran pem ON p.id_pembayaran = pem.id_pembayaran 
+              LEFT JOIN detail_pesanan dp ON p.id_pesanan = dp.id_pesanan
+              LEFT JOIN kategori k ON dp.id_kategori = k.id_kategori
+              LEFT JOIN varian_barang v ON dp.id_varian = v.id_varian
               WHERE DATE(p.tgl_pesanan) BETWEEN ? AND ?
+              GROUP BY p.id_pesanan
               ORDER BY p.tgl_pesanan DESC";
 $stmtDetail = $pdo->prepare($sqlDetail);
 $stmtDetail->execute([$tgl_awal, $tgl_akhir]);
@@ -133,10 +138,17 @@ $laporanData = $stmtDetail->fetchAll();
         <div id="area-cetak" class="card-table p-10 border border-gray-800/50 shadow-2xl mb-12">
             <div class="flex justify-between items-center mb-10 no-print">
                 <h3 class="heading-font text-white text-3xl uppercase tracking-widest">Catatan Transaksi</h3>
-                <button onclick="window.print()"
-                    class="text-[12px] font-black uppercase tracking-widest bg-white text-black px-6 py-2.5 rounded-full hover:bg-orange-500 hover:text-white transition-all">
-                    <i class="fas fa-print mr-2"></i> Cetak Laporan
-                </button>
+                <div class="flex space-x-3">
+                    <a href="export_excel.php?tgl_awal=<?= $tgl_awal ?>&tgl_akhir=<?= $tgl_akhir ?>"
+                        class="text-[12px] font-black uppercase tracking-widest bg-green-600 text-white px-6 py-2.5 rounded-full hover:bg-green-500 transition-all">
+                        <i class="fas fa-file-excel mr-2"></i> Export Excel
+                    </a>
+
+                    <button onclick="window.print()"
+                        class="text-[12px] font-black uppercase tracking-widest bg-white text-black px-6 py-2.5 rounded-full hover:bg-orange-500 hover:text-white transition-all">
+                        <i class="fas fa-print mr-2"></i> Cetak Laporan
+                    </button>
+                </div>
             </div>
 
             <div class="hidden print:block mb-6 text-center">
@@ -154,6 +166,7 @@ $laporanData = $stmtDetail->fetchAll();
                         <th class="pb-5 px-4">Tanggal</th>
                         <th class="pb-5">ID Pesanan</th>
                         <th class="pb-5">Nama Pelanggan</th>
+                        <th class="pb-5">Keterangan Barang</th>
                         <th class="pb-5">Nilai Transaksi</th>
                         <th class="pb-5 text-center">Status</th>
                     </tr>
@@ -165,9 +178,18 @@ $laporanData = $stmtDetail->fetchAll();
                         </td>
                         <td class="py-5 font-black tracking-widest">#<?= $row['id_pesanan'] ?></td>
                         <td class="py-5"><?= htmlspecialchars($row['nama_pelanggan']) ?></td>
-                        <td class="py-5 font-mono"><?= formatRupiah($row['total_harga']) ?></td>
+
+                        <td class="py-5 text-[10px] leading-relaxed text-gray-400 print:text-black">
+                            <?= $row['keterangan_barang'] ?>
+                        </td>
+
+                        <td class="py-5 font-mono text-orange-500 print:text-black">
+                            <?= formatRupiah($row['total_harga']) ?></td>
                         <td class="py-5 text-center">
-                            <span class="font-black"><?= $row['status_bayar'] ?></span>
+                            <span
+                                class="font-black <?= $row['status_bayar'] == 'lunas' ? 'text-green-500 print:text-black' : 'text-red-500 print:text-black' ?>">
+                                <?= $row['status_bayar'] ?>
+                            </span>
                         </td>
                     </tr>
                     <?php endforeach; ?>
