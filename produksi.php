@@ -69,13 +69,15 @@ $stmtCount->execute($params);
 $totalData = $stmtCount->fetchColumn();
 $totalHalaman = ceil($totalData / $limit);
 
+// UPDATE QUERY: Menggunakan tabel kategori dan varian_barang
 $sql = "SELECT pr.*, p.id_pesanan, p.tgl_pesanan, pl.nama_pelanggan, u1.username as nama_admin_order, u2.username as nama_admin_proses, u3.username as nama_admin_selesai,
-        GROUP_CONCAT(CONCAT(b.nama_barang, ' [', IFNULL(dp.keterangan,'-'), '] (', dp.jumlah, ' PCS)') SEPARATOR '<br>') as daftar_barang
+        GROUP_CONCAT(CONCAT(k.nama_kategori, ' [', v.jenis_lengan, '/', v.ukuran, '/', v.warna, '] [', IFNULL(dp.keterangan,'-'), '] (', dp.jumlah, ' PCS)') SEPARATOR '<br>') as daftar_barang
         FROM produksi pr
         JOIN pesanan p ON pr.id_pesanan = p.id_pesanan
         JOIN pelanggan pl ON p.id_pelanggan = pl.id_pelanggan
         LEFT JOIN detail_pesanan dp ON p.id_pesanan = dp.id_pesanan
-        LEFT JOIN barang b ON dp.id_barang = b.id_barang
+        LEFT JOIN kategori k ON dp.id_kategori = k.id_kategori
+        LEFT JOIN varian_barang v ON dp.id_varian = v.id_varian
         LEFT JOIN user u1 ON pr.id_user = u1.id_user
         LEFT JOIN user u2 ON pr.id_user_proses = u2.id_user
         LEFT JOIN user u3 ON pr.id_user_selesai = u3.id_user" 
