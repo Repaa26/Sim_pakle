@@ -14,13 +14,16 @@ $queryNextID = $pdo->query("SELECT MAX(id_pelanggan) as last_id FROM pelanggan")
 $nextIDValue = ($queryNextID['last_id'] ?? 0) + 1;
 $autoID = "PL" . sprintf('%04d', $nextIDValue);
 
-// --- AMBIL DATA VARIAN BARANG (JOIN 3 TABEL) ---
-$queryBarang = $pdo->query("SELECT v.id_varian, v.id_barang, v.ukuran, v.warna, v.harga, v.stok_tersedia, b.nama_barang, k.nama_kategori 
+// --- AMBIL DATA MASTER KATEGORI ---
+$queryKategori = $pdo->query("SELECT * FROM kategori ORDER BY nama_kategori ASC");
+$daftarKategori = $queryKategori->fetchAll(PDO::FETCH_ASSOC);
+
+// --- AMBIL DATA SEMUA VARIAN UNTUK JAVASCRIPT ---
+$queryVarian = $pdo->query("SELECT v.id_varian, v.id_kategori, v.ukuran, v.warna, v.harga, v.stok_tersedia, k.nama_kategori 
                             FROM varian_barang v 
-                            JOIN barang b ON v.id_barang = b.id_barang 
-                            JOIN kategori k ON b.id_kategori = k.id_kategori 
-                            ORDER BY k.nama_kategori ASC, b.nama_barang ASC, v.ukuran ASC");
-$daftarBarang = $queryBarang->fetchAll();
+                            JOIN kategori k ON v.id_kategori = k.id_kategori 
+                            ORDER BY k.nama_kategori ASC, v.ukuran ASC, v.warna ASC");
+$daftarVarian = $queryVarian->fetchAll(PDO::FETCH_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -70,12 +73,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id_pesanan = $pdo->lastInsertId();
 
         // 4. Detail Barang & Update Stok Varian
-        // Memasukkan id_barang dan id_varian agar relasi tetap aman
-        $stmtDetail = $pdo->prepare("INSERT INTO detail_pesanan (id_pesanan, id_barang, id_varian, jumlah, harga_satuan, subtotal, keterangan) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmtDetail = $pdo->prepare("INSERT INTO detail_pesanan (id_pesanan, id_kategori, id_varian, jumlah, harga_satuan, subtotal, keterangan) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmtUpdateStok = $pdo->prepare("UPDATE varian_barang SET stok_tersedia = stok_tersedia - ? WHERE id_varian = ?");
-        $stmtCekStok = $pdo->prepare("SELECT b.id_barang, b.nama_barang, v.ukuran, v.warna, v.stok_tersedia FROM varian_barang v JOIN barang b ON v.id_barang = b.id_barang WHERE v.id_varian = ?");
+        $stmtCekStok = $pdo->prepare("SELECT k.id_kategori, k.nama_kategori, v.ukuran, v.warna, v.stok_tersedia FROM varian_barang v JOIN kategori k ON v.id_kategori = k.id_kategori WHERE v.id_varian = ?");
 
-        // Perhatikan loop ini sekarang menggunakan id_varian[]
         foreach ($_POST['id_varian'] as $key => $id_varian) {
             if ($id_varian == "0") continue;
 
@@ -88,12 +89,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $dataVarian = $stmtCekStok->fetch();
 
             if ($qty_input > $dataVarian['stok_tersedia']) {
-                $nama_lengkap = $dataVarian['nama_barang'] . " [" . $dataVarian['ukuran'] . "/" . $dataVarian['warna'] . "]";
+                $nama_lengkap = $dataVarian['nama_kategori'] . " [" . $dataVarian['ukuran'] . "/" . $dataVarian['warna'] . "]";
                 throw new Exception("Stok " . $nama_lengkap . " tidak mencukupi!");
             }
 
-            // Execute insert detail & potong stok
-            $stmtDetail->execute([$id_pesanan, $dataVarian['id_barang'], $id_varian, $qty_input, $harga_satuan, $subtotal_item, $ket_item]);
+            $stmtDetail->execute([$id_pesanan, $dataVarian['id_kategori'], $id_varian, $qty_input, $harga_satuan, $subtotal_item, $ket_item]);
             $stmtUpdateStok->execute([$qty_input, $id_varian]);
         }
 
@@ -139,13 +139,38 @@ $role_display = $_SESSION['role'];
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600;700;900&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <style>
+    .input-dark {
+        background-color: #2a2a2a;
+        color: white;
+        border: 1px solid #333;
+    }
+
+    .input-dark:focus {
+        border-color: #ff4d00;
+        outline: none;
+    }
+
+    /* Style select agar rapi (panah SVG) */
+    select.input-dark {
+        appearance: none;
+        background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+        background-repeat: no-repeat;
+        background-position: right 1rem top 50%;
+        background-size: 0.65rem auto;
+    }
+
+    select.input-dark:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    </style>
 </head>
 
 <body class="bg-black flex h-screen overflow-hidden text-white">
 
-    <div class="flex h-screen overflow-hidden"> <?php require 'sidebar.php'; ?>
-        <main class="flex-1 overflow-y-auto">
-    </div>
+    <?php require 'sidebar.php'; ?>
+
     <main class="flex-1 custom-dark p-12 overflow-y-auto">
         <header class="flex justify-between items-baseline mb-8 border-b border-gray-800/50 pb-6">
             <div>
@@ -170,45 +195,69 @@ $role_display = $_SESSION['role'];
                         <div class="w-2/3">
                             <p class="text-gray-500 text-[10px] mb-1 uppercase font-bold">Nama :</p>
                             <input type="text" name="nama_pelanggan" placeholder="Nama Lengkap" required
-                                class="w-full input-dark p-4 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none">
+                                class="w-full input-dark p-4 rounded-xl">
                         </div>
                     </div>
                     <input type="text" name="no_telp" placeholder="Nomor Telepon" required
-                        class="w-full input-dark p-4 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none">
+                        class="w-full input-dark p-4 rounded-xl">
                     <textarea name="alamat" placeholder="Alamat Lengkap" required rows="2"
-                        class="w-full input-dark p-4 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none"></textarea>
+                        class="w-full input-dark p-4 rounded-xl resize-none"></textarea>
                 </div>
 
                 <div class="space-y-4">
                     <label class="heading-font text-lg border-gray-800/50 uppercase tracking-widest">2. Item
                         Pesanan</label>
                     <div id="items-container" class="space-y-6">
+
                         <div class="item-row bg-[#1a1a1a]/50 p-6 rounded-[32px] border border-gray-800 space-y-4">
-                            <div class="flex gap-3 items-center">
-                                <select name="id_varian[]" onchange="calculate()" required
-                                    class="flex-1 input-dark p-3 rounded-xl text-sm product-select outline-none">
-                                    <option value="0" data-price="0" data-stock="0">Pilih Produk & Varian</option>
-                                    <?php foreach ($daftarBarang as $b): ?>
-                                    <option value="<?= $b['id_varian'] ?>" data-price="<?= $b['harga'] ?>"
-                                        data-stock="<?= $b['stok_tersedia'] ?>">
-                                        <?= htmlspecialchars($b['nama_kategori'] . ' - ' . $b['nama_barang'] . ' [' . $b['ukuran'] . ' / ' . $b['warna'] . ']') ?>
-                                    </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <input type="hidden" name="harga_satuan_hidden[]" class="price-hidden" value="0">
-                                <input type="number" name="qty[]" oninput="calculate()" placeholder="QTY" required
-                                    class="w-20 input-dark p-3 rounded-xl text-center text-sm qty-input outline-none">
-                                <button type="button" onclick="removeItem(this)"
-                                    class="text-gray-600 hover:text-red-500 p-2 transition-colors"><i
-                                        class="fas fa-trash-alt"></i></button>
+                            <div class="flex flex-col md:flex-row gap-3 items-start">
+
+                                <div class="flex-1 flex flex-col gap-2 w-full">
+                                    <select
+                                        class="kategori-select input-dark p-3 rounded-xl text-xs uppercase font-bold"
+                                        required onchange="updateSizes(this)">
+                                        <option value="">Pilih Kategori Produk</option>
+                                        <?php foreach ($daftarKategori as $k): ?>
+                                        <option value="<?= $k['id_kategori'] ?>">
+                                            <?= htmlspecialchars($k['nama_kategori']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="flex gap-2">
+                                        <select
+                                            class="ukuran-select flex-1 input-dark p-3 rounded-xl text-xs uppercase font-bold"
+                                            required onchange="updateColors(this)" disabled>
+                                            <option value="">Pilih Ukuran</option>
+                                        </select>
+                                        <select
+                                            class="warna-select flex-1 input-dark p-3 rounded-xl text-xs uppercase font-bold"
+                                            required onchange="selectVariant(this)" disabled>
+                                            <option value="">Pilih Warna</option>
+                                        </select>
+                                    </div>
+
+                                    <input type="hidden" name="id_varian[]" class="varian-hidden" value="0">
+                                    <input type="hidden" name="harga_satuan_hidden[]" class="price-hidden" value="0">
+                                    <input type="hidden" class="stock-hidden" value="0">
+                                    <input type="hidden" class="summary-name" value="">
+                                </div>
+
+                                <div class="flex gap-3 items-center">
+                                    <input type="number" name="qty[]" oninput="calculate()" placeholder="QTY" required
+                                        class="w-20 input-dark p-3 rounded-xl text-center text-sm font-bold qty-input">
+                                    <button type="button" onclick="removeItem(this)"
+                                        class="text-gray-600 hover:text-red-500 p-2 transition-colors"><i
+                                            class="fas fa-trash-alt text-lg"></i></button>
+                                </div>
                             </div>
+
                             <textarea name="keterangan_item[]" rows="2"
                                 placeholder="Detail Item (Nama, No Punggung, Catatan Khusus...)"
                                 class="w-full bg-black/40 p-4 rounded-2xl text-xs italic text-gray-300 outline-none focus:ring-1 focus:ring-orange-500 resize-none"></textarea>
                         </div>
                     </div>
+
                     <button type="button" onclick="addItem()"
-                        class="border-gray-800/50 text-[10px] font-bold uppercase tracking-widest"><i
+                        class="border-gray-800/50 text-[10px] font-bold uppercase tracking-widest text-orange-500 hover:text-white transition-colors"><i
                             class="fas fa-plus-circle mr-1"></i> Tambah Item Lain</button>
                 </div>
 
@@ -294,18 +343,118 @@ $role_display = $_SESSION['role'];
     </main>
 
     <script>
+    // --- INJEKSI DATA DATABASE KE JAVASCRIPT ---
+    const dbVariants = <?= json_encode($daftarVarian) ?>;
+
     function toggleDropdown() {
         document.getElementById('service-dropdown').classList.toggle('show');
         document.getElementById('chevron-icon').classList.toggle('rotate-180');
     }
 
+    // --- LOGIKA CASCADING DROPDOWN (BERtingkat) ---
+    function updateSizes(el) {
+        const row = el.closest('.item-row');
+        const sizeSel = row.querySelector('.ukuran-select');
+        const colorSel = row.querySelector('.warna-select');
+        const hiddenId = row.querySelector('.varian-hidden');
+
+        const catId = el.value;
+
+        // Reset dropdown anak
+        sizeSel.innerHTML = '<option value="">Pilih Ukuran</option>';
+        colorSel.innerHTML = '<option value="">Pilih Warna</option>';
+        colorSel.disabled = true;
+        hiddenId.value = "0";
+
+        if (!catId) {
+            sizeSel.disabled = true;
+            calculate();
+            return;
+        }
+
+        // Cari ukuran unik berdasarkan Kategori yang dipilih
+        const sizes = dbVariants.filter(v => v.id_kategori == catId).map(v => v.ukuran).filter((value, index, self) => self.indexOf(value) === index);
+        sizes.forEach(sz => {
+            sizeSel.innerHTML += `<option value="${sz}">${sz}</option>`;
+        });
+
+        sizeSel.disabled = false;
+        calculate();
+    }
+
+    function updateColors(el) {
+        const row = el.closest('.item-row');
+        const catId = row.querySelector('.kategori-select').value;
+        const colorSel = row.querySelector('.warna-select');
+        const hiddenId = row.querySelector('.varian-hidden');
+
+        const size = el.value;
+        hiddenId.value = "0";
+        colorSel.innerHTML = '<option value="">Pilih Warna</option>';
+
+        if (!size) {
+            colorSel.disabled = true;
+            calculate();
+            return;
+        }
+
+        // Cari warna berdasarkan Kategori & Ukuran yang dipilih
+        const colors = dbVariants.filter(v => v.id_kategori == catId && v.ukuran === size);
+        colors.forEach(c => {
+            colorSel.innerHTML += `<option value="${c.warna}">${c.warna}</option>`;
+        });
+
+        colorSel.disabled = false;
+        calculate();
+    }
+
+    function selectVariant(el) {
+        const row = el.closest('.item-row');
+        const catId = row.querySelector('.kategori-select').value;
+        const size = row.querySelector('.ukuran-select').value;
+        const color = el.value;
+
+        const hiddenId = row.querySelector('.varian-hidden');
+        const hiddenPrice = row.querySelector('.price-hidden');
+        const hiddenStock = row.querySelector('.stock-hidden');
+        const summaryName = row.querySelector('.summary-name');
+
+        if (!color) {
+            hiddenId.value = "0";
+            calculate();
+            return;
+        }
+
+        // Cocokkan id_varian yang pas
+        const variant = dbVariants.find(v => v.id_kategori == catId && v.ukuran === size && v.warna === color);
+        if (variant) {
+            hiddenId.value = variant.id_varian;
+            hiddenPrice.value = variant.harga;
+            hiddenStock.value = variant.stok_tersedia;
+            summaryName.value = `${variant.nama_kategori} [${variant.ukuran}/${variant.warna}]`;
+        }
+        calculate();
+    }
+
+    // --- LOGIKA TAMBAH/HAPUS BARIS ---
     function addItem() {
         const container = document.getElementById('items-container');
         const rows = document.querySelectorAll('.item-row');
         const newRow = rows[0].cloneNode(true);
+
+        // Reset field untuk baris baru
+        newRow.querySelector('.kategori-select').selectedIndex = 0;
+        newRow.querySelector('.ukuran-select').innerHTML = '<option value="">Pilih Ukuran</option>';
+        newRow.querySelector('.ukuran-select').disabled = true;
+        newRow.querySelector('.warna-select').innerHTML = '<option value="">Pilih Warna</option>';
+        newRow.querySelector('.warna-select').disabled = true;
+
         newRow.querySelector('.qty-input').value = "";
-        newRow.querySelector('.product-select').selectedIndex = 0;
         newRow.querySelector('textarea').value = "";
+        newRow.querySelector('.varian-hidden').value = "0";
+        newRow.querySelector('.price-hidden').value = "0";
+        newRow.querySelector('.stock-hidden').value = "0";
+
         container.appendChild(newRow);
         calculate();
     }
@@ -317,6 +466,7 @@ $role_display = $_SESSION['role'];
         }
     }
 
+    // --- LOGIKA PERHITUNGAN BIAYA & STOK ---
     function formatNumber(angka) {
         return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     }
@@ -327,19 +477,17 @@ $role_display = $_SESSION['role'];
         summaryBody.innerHTML = "";
 
         document.querySelectorAll('.item-row').forEach(row => {
-            const select = row.querySelector('.product-select');
+            const variantId = row.querySelector('.varian-hidden').value;
             const qtyInput = row.querySelector('.qty-input');
-            const selectedOption = select.options[select.selectedIndex];
+            const price = parseFloat(row.querySelector('.price-hidden').value) || 0;
+            const stock = parseInt(row.querySelector('.stock-hidden').value) || 0;
+            const name = row.querySelector('.summary-name').value;
 
-            const price = parseFloat(selectedOption.dataset.price) || 0;
-            row.querySelector('.price-hidden').value = price;
-
-            const stock = parseInt(selectedOption.dataset.stock) || 0;
             let qty = parseInt(qtyInput.value) || 0;
 
-            if (select.value !== "0" && qty > 0) {
+            if (variantId !== "0" && qty > 0) {
                 if (qty > stock) {
-                    alert(`Stok ${selectedOption.text} cuma ada ${stock}!`);
+                    alert(`Stok ${name} tersisa ${stock} pcs!`);
                     qty = stock;
                     qtyInput.value = stock;
                 }
@@ -347,7 +495,7 @@ $role_display = $_SESSION['role'];
                 grandTotal += subtotal;
                 summaryBody.innerHTML += `
             <tr class="border-b border-gray-800/20">
-                <td class="py-3 uppercase font-bold text-[12px] leading-tight">${selectedOption.text}</td>
+                <td class="py-3 uppercase font-bold text-[12px] leading-tight">${name}</td>
                 <td class="py-3 text-center text-[12px]">${qty}x</td>
                 <td class="py-3 text-right text-gray-200 font-mono text-[12px]">Rp ${formatNumber(subtotal)}</td>
             </tr>`;
